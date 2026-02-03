@@ -5,14 +5,7 @@ import dynamic from 'next/dynamic'
 // Dynamically import confetti to avoid SSR issues
 const confetti = typeof window !== 'undefined' ? require('canvas-confetti') : null
 
-// Chapita colors (cerveza brands)
-const CHAPITA_COLORS = [
-  'chapita-quilmes',
-  'chapita-brahma',
-  'chapita-heineken',
-  'chapita-andes',
-  'chapita-patagonia'
-]
+// No colors needed for birome style - using single blue ink color
 
 // Points options
 const POINTS_OPTIONS = [6, 9, 12, 18, 24, 30]
@@ -28,47 +21,30 @@ const QUICK_SCORES = [
   { label: 'Flor', points: 3, icon: '🎴' },
 ]
 
-// Chapita component
-function Chapita({ colorClass, isNew, delay = 0 }) {
+// Palito (birome stroke) component
+function Palito({ isNew, isDiagonal = false }) {
   return (
     <motion.div
-      initial={isNew ? { y: -50, rotate: -180, opacity: 0 } : false}
-      animate={{ y: 0, rotate: 0, opacity: 1 }}
-      transition={{ delay, duration: 0.3, type: 'spring', stiffness: 200 }}
-      className={`chapita ${colorClass}`}
+      initial={isNew ? { scaleY: 0 } : false}
+      animate={{ scaleY: 1 }}
+      transition={{ duration: 0.15, ease: 'easeOut' }}
+      className={`palito ${isDiagonal ? 'palito-diagonal' : ''} ${isNew ? 'palito-new' : ''}`}
+      style={{ transformOrigin: 'bottom' }}
     />
   )
 }
 
-// Group of 5 chapitas (4 in corners + 1 diagonal)
-function ChapitaGroup({ count, groupIndex, isNewGroup }) {
-  const getColor = (i) => CHAPITA_COLORS[(groupIndex * 5 + i) % CHAPITA_COLORS.length]
-
+// Group of 5 palitos (4 vertical + 1 diagonal crossing)
+function PalitoGroup({ count, isNewGroup }) {
   return (
-    <div className="chapita-group">
-      {count >= 1 && (
-        <div className="flex items-end justify-end">
-          <Chapita colorClass={getColor(0)} isNew={isNewGroup && count === 1} />
-        </div>
-      )}
-      {count >= 2 && (
-        <div className="flex items-end justify-start">
-          <Chapita colorClass={getColor(1)} isNew={isNewGroup && count === 2} />
-        </div>
-      )}
-      {count >= 3 && (
-        <div className="flex items-start justify-end">
-          <Chapita colorClass={getColor(2)} isNew={isNewGroup && count === 3} />
-        </div>
-      )}
-      {count >= 4 && (
-        <div className="flex items-start justify-start">
-          <Chapita colorClass={getColor(3)} isNew={isNewGroup && count === 4} />
-        </div>
-      )}
+    <div className="palito-group">
+      {count >= 1 && <Palito isNew={isNewGroup && count === 1} />}
+      {count >= 2 && <Palito isNew={isNewGroup && count === 2} />}
+      {count >= 3 && <Palito isNew={isNewGroup && count === 3} />}
+      {count >= 4 && <Palito isNew={isNewGroup && count === 4} />}
       {count >= 5 && (
-        <div className="chapita-diagonal">
-          <Chapita colorClass={getColor(4)} isNew={isNewGroup && count === 5} />
+        <div className="palito-diagonal">
+          <Palito isNew={isNewGroup && count === 5} isDiagonal />
         </div>
       )}
     </div>
@@ -94,20 +70,18 @@ function ScoreDisplay({ score, maxScore, teamName, isLeft }) {
   const groups = []
   for (let i = 0; i < fullGroups; i++) {
     groups.push(
-      <ChapitaGroup
+      <PalitoGroup
         key={i}
         count={5}
-        groupIndex={i}
         isNewGroup={i === newGroupIndex}
       />
     )
   }
   if (remainder > 0) {
     groups.push(
-      <ChapitaGroup
+      <PalitoGroup
         key={fullGroups}
         count={remainder}
-        groupIndex={fullGroups}
         isNewGroup={fullGroups === newGroupIndex}
       />
     )
