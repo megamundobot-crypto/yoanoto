@@ -5,6 +5,54 @@ import dynamic from 'next/dynamic'
 // Dynamically import confetti to avoid SSR issues
 const confetti = typeof window !== 'undefined' ? require('canvas-confetti') : null
 
+// Sound effects using Web Audio API
+const playSound = (type) => {
+  if (typeof window === 'undefined') return
+
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+    const oscillator = audioCtx.createOscillator()
+    const gainNode = audioCtx.createGain()
+
+    oscillator.connect(gainNode)
+    gainNode.connect(audioCtx.destination)
+
+    if (type === 'tap') {
+      // Short click sound like pen on paper
+      oscillator.frequency.setValueAtTime(800, audioCtx.currentTime)
+      oscillator.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.05)
+      gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime)
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05)
+      oscillator.start(audioCtx.currentTime)
+      oscillator.stop(audioCtx.currentTime + 0.05)
+    } else if (type === 'win') {
+      // Fanfare for winning
+      const notes = [523, 659, 784, 1047] // C5, E5, G5, C6
+      notes.forEach((freq, i) => {
+        const osc = audioCtx.createOscillator()
+        const gain = audioCtx.createGain()
+        osc.connect(gain)
+        gain.connect(audioCtx.destination)
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.15)
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime + i * 0.15)
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.15 + 0.3)
+        osc.start(audioCtx.currentTime + i * 0.15)
+        osc.stop(audioCtx.currentTime + i * 0.15 + 0.3)
+      })
+    } else if (type === 'undo') {
+      // Reverse swoosh
+      oscillator.frequency.setValueAtTime(300, audioCtx.currentTime)
+      oscillator.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1)
+      gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime)
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1)
+      oscillator.start(audioCtx.currentTime)
+      oscillator.stop(audioCtx.currentTime + 0.1)
+    }
+  } catch (e) {
+    // Audio not supported, fail silently
+  }
+}
+
 // No colors needed for birome style - using single blue ink color
 
 // Points options
@@ -118,47 +166,48 @@ function ConfigScreen({ onStart }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="min-h-screen mantel-pattern p-4 flex flex-col"
+      className="min-h-screen mantel-pattern px-4 py-6 flex flex-col items-center justify-center"
     >
-      <div className="text-center mb-6">
-        <h1 className="text-5xl font-bold text-amber-900 dark:text-amber-200 mb-2">
-          🍺 YoAnoto
-        </h1>
-        <p className="text-xl text-amber-700 dark:text-amber-400">
-          Anotador de Truco Argentino
-        </p>
-      </div>
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-6">
+          <h1 className="text-4xl font-bold text-amber-900 dark:text-amber-200 mb-1">
+            🍺 YoAnoto
+          </h1>
+          <p className="text-lg text-amber-700 dark:text-amber-400">
+            Anotador de Truco Argentino
+          </p>
+        </div>
 
-      <div className="paper-effect rounded-2xl p-6 max-w-md mx-auto w-full space-y-6">
+        <div className="paper-effect rounded-2xl p-5 w-full space-y-5">
         {/* Team names */}
-        <div className="space-y-3">
-          <label className="text-xl text-amber-900 dark:text-amber-200 block">
-            Nombres de los equipos
+        <div className="space-y-2">
+          <label className="text-lg text-amber-900 dark:text-amber-200 block">
+            Equipos
           </label>
-          <div className="flex gap-3">
+          <div className="flex gap-2 items-center">
             <input
               type="text"
               value={team1}
               onChange={(e) => setTeam1(e.target.value)}
               placeholder="Nosotros"
-              maxLength={15}
-              className="flex-1 p-3 rounded-xl bg-white/80 dark:bg-gray-800 border-2 border-amber-600 text-xl text-center focus:outline-none focus:ring-2 focus:ring-amber-500"
+              maxLength={12}
+              className="flex-1 p-2 rounded-lg bg-white/80 dark:bg-gray-800 border-2 border-amber-600 text-lg text-center focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
-            <span className="text-2xl self-center">vs</span>
+            <span className="text-xl font-bold text-amber-700">vs</span>
             <input
               type="text"
               value={team2}
               onChange={(e) => setTeam2(e.target.value)}
               placeholder="Ellos"
-              maxLength={15}
-              className="flex-1 p-3 rounded-xl bg-white/80 dark:bg-gray-800 border-2 border-amber-600 text-xl text-center focus:outline-none focus:ring-2 focus:ring-amber-500"
+              maxLength={12}
+              className="flex-1 p-2 rounded-lg bg-white/80 dark:bg-gray-800 border-2 border-amber-600 text-lg text-center focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
         </div>
 
         {/* Points */}
-        <div className="space-y-3">
-          <label className="text-xl text-amber-900 dark:text-amber-200 block">
+        <div className="space-y-2">
+          <label className="text-lg text-amber-900 dark:text-amber-200 block">
             Partida a
           </label>
           <div className="grid grid-cols-3 gap-2">
@@ -166,44 +215,44 @@ function ConfigScreen({ onStart }) {
               <button
                 key={pts}
                 onClick={() => setMaxPoints(pts)}
-                className={`p-3 rounded-xl text-xl font-bold transition-all ${
+                className={`p-2 rounded-lg text-base font-bold transition-all ${
                   maxPoints === pts
                     ? 'btn-wood'
                     : 'bg-white/60 dark:bg-gray-700 text-amber-800 dark:text-amber-200 border-2 border-amber-400'
                 }`}
               >
-                {pts} tantos
+                {pts}
               </button>
             ))}
           </div>
         </div>
 
         {/* Flor toggle */}
-        <div className="flex items-center justify-between p-3 bg-white/60 dark:bg-gray-700 rounded-xl">
-          <span className="text-xl text-amber-900 dark:text-amber-200">
-            🃏 Con Flor
+        <div className="flex items-center justify-between p-3 bg-white/60 dark:bg-gray-700 rounded-lg">
+          <span className="text-lg text-amber-900 dark:text-amber-200 font-bold">
+            Con Flor
           </span>
           <button
             onClick={() => setWithFlor(!withFlor)}
-            className={`w-16 h-8 rounded-full transition-all ${
+            className={`w-14 h-7 rounded-full transition-all ${
               withFlor ? 'bg-green-500' : 'bg-gray-400'
             }`}
           >
-            <div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-transform ${
-              withFlor ? 'translate-x-9' : 'translate-x-1'
+            <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform ${
+              withFlor ? 'translate-x-8' : 'translate-x-1'
             }`} />
           </button>
         </div>
 
         {/* Falta Envido */}
-        <div className="space-y-3">
-          <label className="text-xl text-amber-900 dark:text-amber-200 block">
-            💀 Falta Envido
+        <div className="space-y-2">
+          <label className="text-lg text-amber-900 dark:text-amber-200 block">
+            Falta Envido
           </label>
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <button
               onClick={() => setFaltaEnvido(1)}
-              className={`flex-1 p-3 rounded-xl text-xl font-bold transition-all ${
+              className={`flex-1 p-2 rounded-lg text-base font-bold transition-all ${
                 faltaEnvido === 1
                   ? 'btn-wood'
                   : 'bg-white/60 dark:bg-gray-700 text-amber-800 dark:text-amber-200 border-2 border-amber-400'
@@ -213,7 +262,7 @@ function ConfigScreen({ onStart }) {
             </button>
             <button
               onClick={() => setFaltaEnvido(2)}
-              className={`flex-1 p-3 rounded-xl text-xl font-bold transition-all ${
+              className={`flex-1 p-2 rounded-lg text-base font-bold transition-all ${
                 faltaEnvido === 2
                   ? 'btn-wood'
                   : 'bg-white/60 dark:bg-gray-700 text-amber-800 dark:text-amber-200 border-2 border-amber-400'
@@ -222,24 +271,20 @@ function ConfigScreen({ onStart }) {
               2 Faltas
             </button>
           </div>
-          <p className="text-sm text-amber-700 dark:text-amber-400 text-center">
-            {faltaEnvido === 1
-              ? 'Una sola falta envido por mano'
-              : 'Se puede cantar falta envido dos veces'}
-          </p>
         </div>
 
         {/* Start button */}
         <button
           onClick={() => onStart({ team1, team2, maxPoints, withFlor, faltaEnvido })}
-          className="w-full p-4 btn-wood rounded-xl text-2xl font-bold mt-6"
+          className="w-full p-4 btn-wood rounded-xl text-2xl font-bold mt-4"
         >
-          🃏 ¡Empezar Partida!
+          🃏 ¡Empezar!
         </button>
       </div>
 
-      <div className="text-center mt-6 text-amber-700 dark:text-amber-400">
-        <p>Hecho con 🧉 en Argentina</p>
+      <p className="text-center mt-4 text-amber-700 dark:text-amber-400 text-sm">
+        Hecho con 🧉 en Argentina
+      </p>
       </div>
     </motion.div>
   )
@@ -421,8 +466,10 @@ function GameScreen({ config, onNewGame }) {
   useEffect(() => {
     if (score1 >= config.maxPoints) {
       setWinner(config.team1)
+      playSound('win')
     } else if (score2 >= config.maxPoints) {
       setWinner(config.team2)
+      playSound('win')
     }
   }, [score1, score2, config.maxPoints, config.team1, config.team2])
 
@@ -438,6 +485,7 @@ function GameScreen({ config, onNewGame }) {
     if (winner) return
 
     vibrate()
+    playSound('tap')
 
     if (team === 1) {
       setScore1((prev) => Math.min(prev + points, config.maxPoints))
@@ -464,6 +512,7 @@ function GameScreen({ config, onNewGame }) {
   const undo = () => {
     if (history.length === 0) return
 
+    playSound('undo')
     const last = history[history.length - 1]
     if (last.team === 1) {
       setScore1((prev) => Math.max(0, prev - last.points))
