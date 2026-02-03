@@ -79,10 +79,19 @@ function BiromeCanvas({ onStrokeComplete, score1, score2, team1, team2, maxPoint
 
   const handleTap = (e) => {
     e.preventDefault()
+    e.stopPropagation()
     const canvas = canvasRef.current
     const rect = canvas.getBoundingClientRect()
-    const touch = e.touches ? e.touches[0] : e
-    const x = (touch.clientX - rect.left) * (canvas.width / rect.width)
+    // Handle both touch and mouse events
+    let clientX
+    if (e.touches && e.touches.length > 0) {
+      clientX = e.touches[0].clientX
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+      clientX = e.changedTouches[0].clientX
+    } else {
+      clientX = e.clientX
+    }
+    const x = (clientX - rect.left) * (canvas.width / rect.width)
     const team = x < canvas.width / 2 ? 1 : 2
     playSound('tap')
     if (navigator.vibrate) navigator.vibrate(30)
@@ -175,10 +184,10 @@ function BiromeCanvas({ onStrokeComplete, score1, score2, team1, team2, maxPoint
       ref={canvasRef}
       width={600}
       height={400}
-      className="w-full h-full touch-none rounded-lg"
-      style={{ cursor: 'pointer' }}
-      onClick={handleTap}
-      onTouchEnd={handleTap}
+      className="w-full h-full rounded-lg"
+      style={{ cursor: 'pointer', touchAction: 'none' }}
+      onMouseDown={handleTap}
+      onTouchStart={handleTap}
     />
   )
 }
