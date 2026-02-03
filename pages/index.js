@@ -38,11 +38,12 @@ const playSound = (type) => {
   } catch (e) {}
 }
 
-// Birome drawing canvas - strokes stay permanently like real pen on paper
-function BiromeCanvas({ onStrokeComplete, strokes, setStrokes }) {
+// Birome drawing canvas - strokes disappear after registering point
+function BiromeCanvas({ onStrokeComplete, score1, score2, team1, team2, maxPoints }) {
   const canvasRef = useRef(null)
   const [isDrawing, setIsDrawing] = useState(false)
   const [currentPath, setCurrentPath] = useState([])
+  const [flash, setFlash] = useState(null) // {team: 1 or 2} for visual feedback
 
   const getPos = (e) => {
     const canvas = canvasRef.current
@@ -86,13 +87,10 @@ function BiromeCanvas({ onStrokeComplete, strokes, setStrokes }) {
         const midX = canvas.width / 2
         const team = avgX < midX ? 1 : 2
 
-        // Save stroke permanently
-        const newStroke = {
-          points: [...currentPath],
-          team,
-          id: Date.now()
-        }
-        setStrokes(prev => [...prev, newStroke])
+        // Flash feedback
+        setFlash({ team })
+        setTimeout(() => setFlash(null), 300)
+
         onStrokeComplete(team)
       }
     }
@@ -107,6 +105,16 @@ function BiromeCanvas({ onStrokeComplete, strokes, setStrokes }) {
     // Paper texture background
     ctx.fillStyle = '#fffef8'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+    // Flash effect when point is scored
+    if (flash) {
+      ctx.fillStyle = flash.team === 1 ? 'rgba(59, 130, 246, 0.2)' : 'rgba(249, 115, 22, 0.2)'
+      if (flash.team === 1) {
+        ctx.fillRect(0, 0, canvas.width / 2, canvas.height)
+      } else {
+        ctx.fillRect(canvas.width / 2, 0, canvas.width / 2, canvas.height)
+      }
+    }
 
     // Subtle grid lines like notebook paper
     ctx.strokeStyle = 'rgba(200, 200, 220, 0.3)'
@@ -126,26 +134,26 @@ function BiromeCanvas({ onStrokeComplete, strokes, setStrokes }) {
     ctx.lineTo(canvas.width / 2, canvas.height)
     ctx.stroke()
 
-    // Draw all permanent strokes (birome style)
-    strokes.forEach(stroke => {
-      if (stroke.points.length > 1) {
-        ctx.strokeStyle = '#1a237e'
-        ctx.lineWidth = 2.5
-        ctx.lineCap = 'round'
-        ctx.lineJoin = 'round'
-        ctx.beginPath()
-        ctx.moveTo(stroke.points[0].x, stroke.points[0].y)
-        for (let i = 1; i < stroke.points.length; i++) {
-          ctx.lineTo(stroke.points[i].x, stroke.points[i].y)
-        }
-        ctx.stroke()
-      }
-    })
+    // Team labels
+    ctx.font = 'bold 16px sans-serif'
+    ctx.textAlign = 'center'
+    ctx.fillStyle = 'rgba(59, 130, 246, 0.6)'
+    ctx.fillText(team1, canvas.width / 4, 25)
+    ctx.fillStyle = 'rgba(249, 115, 22, 0.6)'
+    ctx.fillText(team2, (canvas.width / 4) * 3, 25)
 
-    // Draw current stroke
+    // Score display in canvas
+    ctx.font = 'bold 48px Georgia, serif'
+    ctx.textAlign = 'center'
+    ctx.fillStyle = 'rgba(59, 130, 246, 0.15)'
+    ctx.fillText(score1.toString(), canvas.width / 4, canvas.height / 2 + 15)
+    ctx.fillStyle = 'rgba(249, 115, 22, 0.15)'
+    ctx.fillText(score2.toString(), (canvas.width / 4) * 3, canvas.height / 2 + 15)
+
+    // Draw current stroke (birome style) - disappears when released
     if (currentPath.length > 1) {
       ctx.strokeStyle = '#1a237e'
-      ctx.lineWidth = 2.5
+      ctx.lineWidth = 3
       ctx.lineCap = 'round'
       ctx.lineJoin = 'round'
       ctx.beginPath()
@@ -155,7 +163,7 @@ function BiromeCanvas({ onStrokeComplete, strokes, setStrokes }) {
       }
       ctx.stroke()
     }
-  }, [currentPath, strokes])
+  }, [currentPath, flash, score1, score2, team1, team2])
 
   return (
     <canvas
@@ -163,7 +171,7 @@ function BiromeCanvas({ onStrokeComplete, strokes, setStrokes }) {
       width={600}
       height={500}
       className="w-full h-full touch-none rounded-lg"
-      style={{ cursor: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\'%3E%3Cpath fill=\'%231a237e\' d=\'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z\'/%3E%3C/svg%3E") 0 24, crosshair' }}
+      style={{ cursor: 'crosshair' }}
       onMouseDown={startDrawing}
       onMouseMove={draw}
       onMouseUp={stopDrawing}
@@ -314,7 +322,6 @@ function GameScreen({ config, onNewGame }) {
   const [score2, setScore2] = useState(0)
   const [history, setHistory] = useState([])
   const [winner, setWinner] = useState(null)
-  const [strokes, setStrokes] = useState([])
 
   useEffect(() => {
     if (score1 >= config.maxPoints && !winner) {
@@ -353,15 +360,6 @@ function GameScreen({ config, onNewGame }) {
     if (last.team === 1) setScore1((p) => Math.max(0, p - last.points))
     else setScore2((p) => Math.max(0, p - last.points))
     setHistory((prev) => prev.slice(0, -1))
-    // Also remove last stroke from that team
-    setStrokes(prev => {
-      const teamStrokes = prev.filter(s => s.team === last.team)
-      if (teamStrokes.length > 0) {
-        const lastStroke = teamStrokes[teamStrokes.length - 1]
-        return prev.filter(s => s.id !== lastStroke.id)
-      }
-      return prev
-    })
     if (winner) setWinner(null)
   }
 
@@ -370,7 +368,6 @@ function GameScreen({ config, onNewGame }) {
     setScore2(0)
     setHistory([])
     setWinner(null)
-    setStrokes([])
   }
 
   return (
@@ -406,8 +403,11 @@ function GameScreen({ config, onNewGame }) {
       {/* Drawing area - birome style */}
       <div className="flex-1 mx-3 my-2 rounded-lg shadow-lg overflow-hidden border-2 border-gray-300">
         <BiromeCanvas
-          strokes={strokes}
-          setStrokes={setStrokes}
+          score1={score1}
+          score2={score2}
+          team1={config.team1}
+          team2={config.team2}
+          maxPoints={config.maxPoints}
           onStrokeComplete={(team) => addPoints(team, 1)}
         />
       </div>
