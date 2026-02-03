@@ -38,68 +38,87 @@ const playSound = (type) => {
   } catch (e) {}
 }
 
-// Birome drawing canvas - strokes disappear after registering point
+// Birome canvas - tap to auto-draw strokes
 function BiromeCanvas({ onStrokeComplete, score1, score2, team1, team2, maxPoints }) {
   const canvasRef = useRef(null)
-  const [isDrawing, setIsDrawing] = useState(false)
-  const [currentPath, setCurrentPath] = useState([])
-  const [flash, setFlash] = useState(null) // {team: 1 or 2} for visual feedback
+  const [strokes, setStrokes] = useState({ team1: [], team2: [] })
+  const [animating, setAnimating] = useState(null)
 
-  const getPos = (e) => {
+  // Generate a random birome-style stroke for the tally system
+  const generateTallyStroke = (team, index) => {
+    const canvas = canvasRef.current
+    const halfWidth = canvas.width / 2
+    const baseX = team === 1 ? 40 : halfWidth + 40
+    const groupIndex = Math.floor(index / 5)
+    const strokeInGroup = index % 5
+
+    // Position groups in a grid
+    const groupCol = groupIndex % 3
+    const groupRow = Math.floor(groupIndex / 3)
+    const groupX = baseX + groupCol * 80
+    const groupY = 60 + groupRow * 70
+    const size = 40
+
+    // Generate stroke based on position in group (square pattern)
+    let x1, y1, x2, y2
+    switch (strokeInGroup) {
+      case 0: // Left vertical
+        x1 = groupX; y1 = groupY; x2 = groupX; y2 = groupY + size
+        break
+      case 1: // Top horizontal
+        x1 = groupX; y1 = groupY; x2 = groupX + size; y2 = groupY
+        break
+      case 2: // Right vertical
+        x1 = groupX + size; y1 = groupY; x2 = groupX + size; y2 = groupY + size
+        break
+      case 3: // Bottom horizontal
+        x1 = groupX; y1 = groupY + size; x2 = groupX + size; y2 = groupY + size
+        break
+      case 4: // Diagonal
+        x1 = groupX; y1 = groupY + size; x2 = groupX + size; y2 = groupY
+        break
+    }
+
+    // Add hand-drawn wobble
+    const wobble = () => (Math.random() - 0.5) * 4
+    return {
+      x1: x1 + wobble(), y1: y1 + wobble(),
+      x2: x2 + wobble(), y2: y2 + wobble(),
+      progress: 0
+    }
+  }
+
+  const handleTap = (e) => {
+    e.preventDefault()
     const canvas = canvasRef.current
     const rect = canvas.getBoundingClientRect()
     const touch = e.touches ? e.touches[0] : e
-    return {
-      x: (touch.clientX - rect.left) * (canvas.width / rect.width),
-      y: (touch.clientY - rect.top) * (canvas.height / rect.height)
-    }
-  }
+    const x = (touch.clientX - rect.left) * (canvas.width / rect.width)
+    const team = x < canvas.width / 2 ? 1 : 2
+    const teamKey = team === 1 ? 'team1' : 'team2'
 
-  const startDrawing = (e) => {
-    e.preventDefault()
-    const pos = getPos(e)
-    setIsDrawing(true)
-    setCurrentPath([pos])
-  }
+    // Generate new stroke
+    const newStroke = generateTallyStroke(team, strokes[teamKey].length)
 
-  const draw = (e) => {
-    if (!isDrawing) return
-    e.preventDefault()
-    const pos = getPos(e)
-    setCurrentPath(prev => [...prev, pos])
-  }
+    // Animate the stroke
+    setAnimating({ team, stroke: newStroke })
 
-  const stopDrawing = (e) => {
-    if (!isDrawing) return
-    e.preventDefault()
-    setIsDrawing(false)
-
-    if (currentPath.length > 3) {
-      // Calculate total path length (sum of all segments)
-      let totalLength = 0
-      for (let i = 1; i < currentPath.length; i++) {
-        const dx = currentPath[i].x - currentPath[i-1].x
-        const dy = currentPath[i].y - currentPath[i-1].y
-        totalLength += Math.sqrt(dx*dx + dy*dy)
-      }
-
-      if (totalLength > 30) {
-        const avgX = currentPath.reduce((sum, p) => sum + p.x, 0) / currentPath.length
-        const canvas = canvasRef.current
-        const midX = canvas.width / 2
-        const team = avgX < midX ? 1 : 2
-
-        // Points based on stroke length: every 60px = 1 point (min 1, max 5)
-        const points = Math.min(5, Math.max(1, Math.floor(totalLength / 60)))
-
-        // Flash feedback with points count
-        setFlash({ team, points })
-        setTimeout(() => setFlash(null), 400)
-
-        onStrokeComplete(team, points)
+    let progress = 0
+    const animate = () => {
+      progress += 0.15
+      if (progress >= 1) {
+        setStrokes(prev => ({
+          ...prev,
+          [teamKey]: [...prev[teamKey], { ...newStroke, progress: 1 }]
+        }))
+        setAnimating(null)
+        onStrokeComplete(team, 1)
+      } else {
+        setAnimating({ team, stroke: { ...newStroke, progress } })
+        requestAnimationFrame(animate)
       }
     }
-    setCurrentPath([])
+    requestAnimationFrame(animate)
   }
 
   // Render canvas
@@ -107,27 +126,11 @@ function BiromeCanvas({ onStrokeComplete, score1, score2, team1, team2, maxPoint
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
 
-    // Paper texture background
+    // Paper background
     ctx.fillStyle = '#fffef8'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-    // Flash effect when point is scored
-    if (flash) {
-      ctx.fillStyle = flash.team === 1 ? 'rgba(59, 130, 246, 0.25)' : 'rgba(249, 115, 22, 0.25)'
-      if (flash.team === 1) {
-        ctx.fillRect(0, 0, canvas.width / 2, canvas.height)
-      } else {
-        ctx.fillRect(canvas.width / 2, 0, canvas.width / 2, canvas.height)
-      }
-      // Show points gained
-      ctx.font = 'bold 72px Georgia, serif'
-      ctx.textAlign = 'center'
-      ctx.fillStyle = flash.team === 1 ? 'rgba(59, 130, 246, 0.8)' : 'rgba(249, 115, 22, 0.8)'
-      const x = flash.team === 1 ? canvas.width / 4 : (canvas.width / 4) * 3
-      ctx.fillText(`+${flash.points}`, x, canvas.height / 2 + 20)
-    }
-
-    // Subtle grid lines like notebook paper
+    // Notebook lines
     ctx.strokeStyle = 'rgba(200, 200, 220, 0.3)'
     ctx.lineWidth = 1
     for (let y = 30; y < canvas.height; y += 30) {
@@ -138,7 +141,7 @@ function BiromeCanvas({ onStrokeComplete, score1, score2, team1, team2, maxPoint
     }
 
     // Center divider
-    ctx.strokeStyle = 'rgba(200, 100, 100, 0.4)'
+    ctx.strokeStyle = 'rgba(200, 100, 100, 0.5)'
     ctx.lineWidth = 2
     ctx.beginPath()
     ctx.moveTo(canvas.width / 2, 0)
@@ -146,50 +149,57 @@ function BiromeCanvas({ onStrokeComplete, score1, score2, team1, team2, maxPoint
     ctx.stroke()
 
     // Team labels
-    ctx.font = 'bold 16px sans-serif'
+    ctx.font = 'bold 18px sans-serif'
     ctx.textAlign = 'center'
-    ctx.fillStyle = 'rgba(59, 130, 246, 0.6)'
-    ctx.fillText(team1, canvas.width / 4, 25)
-    ctx.fillStyle = 'rgba(249, 115, 22, 0.6)'
-    ctx.fillText(team2, (canvas.width / 4) * 3, 25)
+    ctx.fillStyle = '#3b82f6'
+    ctx.fillText(team1, canvas.width / 4, 28)
+    ctx.fillStyle = '#f97316'
+    ctx.fillText(team2, (canvas.width / 4) * 3, 28)
 
-    // Score display in canvas
-    ctx.font = 'bold 48px Georgia, serif'
-    ctx.textAlign = 'center'
-    ctx.fillStyle = 'rgba(59, 130, 246, 0.15)'
-    ctx.fillText(score1.toString(), canvas.width / 4, canvas.height / 2 + 15)
-    ctx.fillStyle = 'rgba(249, 115, 22, 0.15)'
-    ctx.fillText(score2.toString(), (canvas.width / 4) * 3, canvas.height / 2 + 15)
-
-    // Draw current stroke (birome style) - disappears when released
-    if (currentPath.length > 1) {
-      ctx.strokeStyle = '#1a237e'
-      ctx.lineWidth = 3
+    // Draw all strokes (birome style)
+    const drawStroke = (stroke, color) => {
+      ctx.strokeStyle = color
+      ctx.lineWidth = 2.5
       ctx.lineCap = 'round'
-      ctx.lineJoin = 'round'
       ctx.beginPath()
-      ctx.moveTo(currentPath[0].x, currentPath[0].y)
-      for (let i = 1; i < currentPath.length; i++) {
-        ctx.lineTo(currentPath[i].x, currentPath[i].y)
-      }
+      ctx.moveTo(stroke.x1, stroke.y1)
+      const endX = stroke.x1 + (stroke.x2 - stroke.x1) * stroke.progress
+      const endY = stroke.y1 + (stroke.y2 - stroke.y1) * stroke.progress
+      ctx.lineTo(endX, endY)
       ctx.stroke()
     }
-  }, [currentPath, flash, score1, score2, team1, team2])
+
+    strokes.team1.forEach(s => drawStroke(s, '#1e3a8a'))
+    strokes.team2.forEach(s => drawStroke(s, '#c2410c'))
+
+    if (animating) {
+      drawStroke(animating.stroke, animating.team === 1 ? '#1e3a8a' : '#c2410c')
+    }
+
+    // Tap hint at bottom
+    ctx.font = '14px sans-serif'
+    ctx.fillStyle = 'rgba(150, 150, 150, 0.6)'
+    ctx.fillText('👆 Tocá para anotar', canvas.width / 4, canvas.height - 15)
+    ctx.fillText('👆 Tocá para anotar', (canvas.width / 4) * 3, canvas.height - 15)
+
+  }, [strokes, animating, team1, team2])
+
+  // Reset strokes when scores reset
+  useEffect(() => {
+    if (score1 === 0 && score2 === 0) {
+      setStrokes({ team1: [], team2: [] })
+    }
+  }, [score1, score2])
 
   return (
     <canvas
       ref={canvasRef}
       width={600}
-      height={500}
+      height={400}
       className="w-full h-full touch-none rounded-lg"
-      style={{ cursor: 'crosshair' }}
-      onMouseDown={startDrawing}
-      onMouseMove={draw}
-      onMouseUp={stopDrawing}
-      onMouseLeave={stopDrawing}
-      onTouchStart={startDrawing}
-      onTouchMove={draw}
-      onTouchEnd={stopDrawing}
+      style={{ cursor: 'pointer' }}
+      onClick={handleTap}
+      onTouchEnd={handleTap}
     />
   )
 }
