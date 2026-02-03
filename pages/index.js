@@ -399,19 +399,20 @@ function GameScreen({ config, onNewGame }) {
   }, [winner, config.maxPoints])
 
   // Calculate falta envido points
-  const getFaltaPoints = (team) => {
-    const myScore = team === 1 ? score1 : score2
+  // The falta gives points based on what the LEADING team needs
+  const getFaltaPoints = () => {
+    const leaderScore = Math.max(score1, score2)
 
     if (config.faltaEnvido === 1) {
-      // 1 Falta: completa directo al máximo (30 o 15)
-      return config.maxPoints - myScore
+      // 1 Falta: completa directo a 30 (gana el partido)
+      return config.maxPoints - leaderScore
     } else {
-      // 2 Faltas: completa a 15 si está en malas, o al máximo si está en buenas
-      const inBuenas = myScore >= 15
-      if (inBuenas) {
-        return config.maxPoints - myScore
+      // 2 Faltas: completa a 15 si líder está en malas, o a 30 si está en buenas
+      const leaderInBuenas = leaderScore >= 15
+      if (leaderInBuenas) {
+        return config.maxPoints - leaderScore
       } else {
-        return 15 - myScore
+        return 15 - leaderScore
       }
     }
   }
@@ -486,12 +487,12 @@ function GameScreen({ config, onNewGame }) {
         </button>
         <button
           onClick={() => {
-            const pts = getFaltaPoints(1)
+            const pts = getFaltaPoints()
             if (pts > 0) addPoints(1, pts)
           }}
           className="flex-1 py-2 bg-red-700 text-white rounded-lg font-bold text-sm"
         >
-          Falta ({getFaltaPoints(1)})
+          Falta
         </button>
         <button
           onClick={undo}
@@ -502,12 +503,12 @@ function GameScreen({ config, onNewGame }) {
         </button>
         <button
           onClick={() => {
-            const pts = getFaltaPoints(2)
+            const pts = getFaltaPoints()
             if (pts > 0) addPoints(2, pts)
           }}
           className="flex-1 py-2 bg-red-700 text-white rounded-lg font-bold text-sm"
         >
-          Falta ({getFaltaPoints(2)})
+          Falta
         </button>
         <button
           onClick={() => addPoints(2, 1)}
