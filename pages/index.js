@@ -1,10 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-// Dynamically import confetti to avoid SSR issues
-const confetti = typeof window !== 'undefined' ? require('canvas-confetti') : null
-
-// Sound effects using Web Audio API
+// Sound effects
 const playSound = (type) => {
   if (typeof window === 'undefined') return
   try {
@@ -15,420 +12,272 @@ const playSound = (type) => {
     gainNode.connect(audioCtx.destination)
 
     if (type === 'tap') {
-      oscillator.frequency.setValueAtTime(800, audioCtx.currentTime)
-      oscillator.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.05)
-      gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime)
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05)
-      oscillator.start(audioCtx.currentTime)
-      oscillator.stop(audioCtx.currentTime + 0.05)
+      oscillator.frequency.setValueAtTime(600, audioCtx.currentTime)
+      oscillator.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.08)
+      gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime)
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08)
+      oscillator.start()
+      oscillator.stop(audioCtx.currentTime + 0.08)
     } else if (type === 'win') {
-      const notes = [523, 659, 784, 1047]
-      notes.forEach((freq, i) => {
-        const osc = audioCtx.createOscillator()
-        const gain = audioCtx.createGain()
-        osc.connect(gain)
-        gain.connect(audioCtx.destination)
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.15)
-        gain.gain.setValueAtTime(0.2, audioCtx.currentTime + i * 0.15)
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.15 + 0.3)
-        osc.start(audioCtx.currentTime + i * 0.15)
-        osc.stop(audioCtx.currentTime + i * 0.15 + 0.3)
+      [523, 659, 784, 1047].forEach((freq, i) => {
+        setTimeout(() => {
+          try {
+            const o = audioCtx.createOscillator()
+            const g = audioCtx.createGain()
+            o.connect(g)
+            g.connect(audioCtx.destination)
+            o.frequency.value = freq
+            g.gain.setValueAtTime(0.15, audioCtx.currentTime)
+            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2)
+            o.start()
+            o.stop(audioCtx.currentTime + 0.2)
+          } catch(e) {}
+        }, i * 150)
       })
-    } else if (type === 'undo') {
-      oscillator.frequency.setValueAtTime(300, audioCtx.currentTime)
-      oscillator.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1)
-      gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime)
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1)
-      oscillator.start(audioCtx.currentTime)
-      oscillator.stop(audioCtx.currentTime + 0.1)
     }
   } catch (e) {}
 }
 
-// Points options
-const POINTS_OPTIONS = [15, 30]
+// Simple tally mark - just a line
+function TallyMark({ index, total, isNew }) {
+  const isDiagonal = index === 4 // 5th mark crosses the others
 
-// Fosforo (matchstick) SVG component
-function Fosforo({ rotation = 0, isNew = false }) {
   return (
     <motion.div
-      initial={isNew ? { scale: 0, opacity: 0 } : false}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ duration: 0.2 }}
-      className="absolute"
+      initial={isNew ? { scaleY: 0 } : false}
+      animate={{ scaleY: 1 }}
+      transition={{ duration: 0.15 }}
       style={{
-        width: '8px',
-        height: '45px',
-        transform: `rotate(${rotation}deg)`,
-        transformOrigin: 'center',
+        position: isDiagonal ? 'absolute' : 'relative',
+        width: isDiagonal ? '3px' : '3px',
+        height: isDiagonal ? '40px' : '32px',
+        background: '#1a365d',
+        borderRadius: '1.5px',
+        transform: isDiagonal ? 'rotate(-30deg)' : 'none',
+        transformOrigin: 'bottom',
+        left: isDiagonal ? '50%' : 'auto',
+        top: isDiagonal ? '50%' : 'auto',
+        marginLeft: isDiagonal ? '-1.5px' : '0',
+        marginTop: isDiagonal ? '-20px' : '0',
       }}
-    >
-      {/* Matchstick body */}
-      <div
-        className="absolute bottom-0 left-1/2 -translate-x-1/2"
-        style={{
-          width: '6px',
-          height: '38px',
-          background: 'linear-gradient(90deg, #D4A574 0%, #E8C99B 50%, #D4A574 100%)',
-          borderRadius: '1px',
-          boxShadow: '1px 1px 2px rgba(0,0,0,0.3)',
-        }}
-      />
-      {/* Matchstick head */}
-      <div
-        className="absolute top-0 left-1/2 -translate-x-1/2"
-        style={{
-          width: '8px',
-          height: '10px',
-          background: 'linear-gradient(180deg, #8B0000 0%, #CD5C5C 30%, #8B0000 100%)',
-          borderRadius: '3px 3px 1px 1px',
-        }}
-      />
-    </motion.div>
+    />
   )
 }
 
-// Group of 5 fosforos forming a square with diagonal
-function FosforoGroup({ count, isNewGroup }) {
-  // Square: top, right, bottom, left + diagonal
+// Group of 5 tally marks
+function TallyGroup({ count }) {
   return (
-    <div className="relative w-16 h-16 m-1">
-      {/* Top horizontal */}
-      {count >= 1 && (
-        <div className="absolute top-0 left-1/2 -translate-x-1/2">
-          <Fosforo rotation={90} isNew={isNewGroup && count === 1} />
-        </div>
-      )}
-      {/* Right vertical */}
-      {count >= 2 && (
-        <div className="absolute right-0 top-1/2 -translate-y-1/2">
-          <Fosforo rotation={0} isNew={isNewGroup && count === 2} />
-        </div>
-      )}
-      {/* Bottom horizontal */}
-      {count >= 3 && (
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2">
-          <Fosforo rotation={90} isNew={isNewGroup && count === 3} />
-        </div>
-      )}
-      {/* Left vertical */}
-      {count >= 4 && (
-        <div className="absolute left-0 top-1/2 -translate-y-1/2">
-          <Fosforo rotation={0} isNew={isNewGroup && count === 4} />
-        </div>
-      )}
-      {/* Diagonal */}
-      {count >= 5 && (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-          <Fosforo rotation={45} isNew={isNewGroup && count === 5} />
-        </div>
-      )}
+    <div
+      className="relative flex items-end gap-1 mx-2 my-1"
+      style={{ height: '40px', width: '35px' }}
+    >
+      {[...Array(Math.min(count, 4))].map((_, i) => (
+        <TallyMark key={i} index={i} total={count} isNew={false} />
+      ))}
+      {count >= 5 && <TallyMark index={4} total={count} isNew={false} />}
     </div>
   )
 }
 
-// Score display for one team
-function ScoreColumn({ score, maxScore, teamName, onAdd, isBuenas }) {
-  const displayScore = isBuenas ? score - 15 : score
+// Score display
+function ScoreSection({ score, phase, teamName, maxScore }) {
+  const displayScore = phase === 'buenas' ? score - 15 : score
   const fullGroups = Math.floor(displayScore / 5)
   const remainder = displayScore % 5
 
-  const groups = []
-  for (let i = 0; i < fullGroups; i++) {
-    groups.push(<FosforoGroup key={i} count={5} isNewGroup={false} />)
-  }
-  if (remainder > 0) {
-    groups.push(<FosforoGroup key={fullGroups} count={remainder} isNewGroup={true} />)
-  }
-
-  const bgColor = isBuenas
-    ? 'bg-gradient-to-b from-green-800 to-green-900'
-    : 'bg-gradient-to-b from-red-800 to-red-900'
-
   return (
-    <div className={`flex-1 flex flex-col ${bgColor} rounded-lg m-1 overflow-hidden`}>
-      {/* Team name header */}
-      <div className="bg-orange-500 py-2 px-3 text-center shadow-md">
-        <h2 className="text-xl font-bold text-white uppercase tracking-wide" style={{ textShadow: '2px 2px 2px rgba(0,0,0,0.5)' }}>
+    <div className="flex-1 flex flex-col">
+      {/* Team name */}
+      <div className="text-center py-2 border-b-2 border-gray-300">
+        <h2 className="text-xl font-bold text-gray-800 uppercase tracking-wider">
           {teamName}
         </h2>
       </div>
 
-      {/* Score info */}
-      <div className="bg-sky-400 py-1 px-2 text-center">
-        <span className="text-lg font-bold text-white">
-          {displayScore} {isBuenas ? 'Buenas' : 'Malas'}
-        </span>
+      {/* Phase indicator */}
+      <div className={`text-center py-1 text-sm font-semibold ${
+        phase === 'buenas' ? 'bg-green-100 text-green-800' : 'bg-red-50 text-red-700'
+      }`}>
+        {displayScore} {phase === 'buenas' ? 'BUENAS' : 'MALAS'}
       </div>
 
-      {/* Matchsticks area */}
-      <div className="flex-1 flex flex-wrap content-start justify-center p-2 min-h-[200px]">
-        {groups.length > 0 ? groups : (
-          <span className="text-white/30 text-lg mt-8">0</span>
+      {/* Tally marks area */}
+      <div className="flex-1 flex flex-wrap content-start justify-center p-3 min-h-[180px]">
+        {[...Array(fullGroups)].map((_, i) => (
+          <TallyGroup key={i} count={5} />
+        ))}
+        {remainder > 0 && <TallyGroup count={remainder} />}
+        {displayScore === 0 && (
+          <span className="text-gray-300 text-2xl mt-12">—</span>
         )}
-      </div>
-
-      {/* Quick add buttons */}
-      <div className="flex gap-2 p-2 bg-black/20">
-        <button
-          onClick={() => onAdd(2)}
-          className="flex-1 py-3 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white text-xl font-bold rounded-lg shadow-lg"
-        >
-          +2
-        </button>
-        <button
-          onClick={() => onAdd(4)}
-          className="flex-1 py-3 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white text-xl font-bold rounded-lg shadow-lg"
-        >
-          +4
-        </button>
       </div>
     </div>
   )
 }
 
-// Configuration screen
+// Config screen
 function ConfigScreen({ onStart }) {
   const [team1, setTeam1] = useState('Nosotros')
   const [team2, setTeam2] = useState('Ellos')
   const [maxPoints, setMaxPoints] = useState(30)
-  const [withFlor, setWithFlor] = useState(false)
   const [faltaEnvido, setFaltaEnvido] = useState(2)
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-800 to-amber-950 px-4 py-8 flex flex-col items-center justify-center">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-6">
-          <h1 className="text-4xl font-bold text-amber-200 mb-1">
-            🍺 YoAnoto
-          </h1>
-          <p className="text-lg text-amber-400">
-            Anotador de Truco Argentino
-          </p>
-        </div>
+    <div className="min-h-screen bg-amber-50 flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-xs">
+        <h1 className="text-3xl font-bold text-center text-gray-800 mb-1">YoAnoto</h1>
+        <p className="text-center text-gray-500 mb-6">Anotador de Truco</p>
 
-        <div className="bg-amber-100 rounded-2xl p-5 w-full space-y-4 shadow-xl">
-          {/* Team names */}
-          <div className="space-y-2">
-            <label className="text-lg text-amber-900 block font-bold">Equipos</label>
-            <div className="flex gap-2 items-center">
-              <input
-                type="text"
-                value={team1}
-                onChange={(e) => setTeam1(e.target.value)}
-                placeholder="Nosotros"
-                maxLength={12}
-                className="flex-1 p-2 rounded-lg bg-white border-2 border-amber-600 text-lg text-center"
-              />
-              <span className="text-xl font-bold text-amber-700">vs</span>
-              <input
-                type="text"
-                value={team2}
-                onChange={(e) => setTeam2(e.target.value)}
-                placeholder="Ellos"
-                maxLength={12}
-                className="flex-1 p-2 rounded-lg bg-white border-2 border-amber-600 text-lg text-center"
-              />
-            </div>
+        <div className="bg-white rounded-xl shadow-lg p-5 space-y-4">
+          {/* Teams */}
+          <div className="flex gap-2 items-center">
+            <input
+              type="text"
+              value={team1}
+              onChange={(e) => setTeam1(e.target.value)}
+              className="flex-1 p-2 border-2 border-gray-200 rounded-lg text-center font-medium"
+              maxLength={10}
+            />
+            <span className="text-gray-400 font-bold">vs</span>
+            <input
+              type="text"
+              value={team2}
+              onChange={(e) => setTeam2(e.target.value)}
+              className="flex-1 p-2 border-2 border-gray-200 rounded-lg text-center font-medium"
+              maxLength={10}
+            />
           </div>
 
           {/* Points */}
-          <div className="space-y-2">
-            <label className="text-lg text-amber-900 block font-bold">Partida a</label>
-            <div className="flex gap-2">
-              {POINTS_OPTIONS.map((pts) => (
-                <button
-                  key={pts}
-                  onClick={() => setMaxPoints(pts)}
-                  className={`flex-1 p-3 rounded-lg text-xl font-bold transition-all ${
-                    maxPoints === pts
-                      ? 'bg-amber-700 text-white'
-                      : 'bg-white text-amber-800 border-2 border-amber-400'
-                  }`}
-                >
-                  {pts}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Flor toggle */}
-          <div className="flex items-center justify-between p-3 bg-white rounded-lg">
-            <span className="text-lg text-amber-900 font-bold">Con Flor</span>
-            <button
-              onClick={() => setWithFlor(!withFlor)}
-              className={`w-14 h-7 rounded-full transition-all ${
-                withFlor ? 'bg-green-500' : 'bg-gray-400'
-              }`}
-            >
-              <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform ${
-                withFlor ? 'translate-x-8' : 'translate-x-1'
-              }`} />
-            </button>
-          </div>
-
-          {/* Falta Envido */}
-          <div className="space-y-2">
-            <label className="text-lg text-amber-900 block font-bold">Falta Envido</label>
-            <div className="flex gap-2">
+          <div className="flex gap-2">
+            {[15, 30].map((pts) => (
               <button
-                onClick={() => setFaltaEnvido(1)}
-                className={`flex-1 p-2 rounded-lg text-base font-bold transition-all ${
-                  faltaEnvido === 1
-                    ? 'bg-amber-700 text-white'
-                    : 'bg-white text-amber-800 border-2 border-amber-400'
+                key={pts}
+                onClick={() => setMaxPoints(pts)}
+                className={`flex-1 py-3 rounded-lg font-bold text-lg transition ${
+                  maxPoints === pts
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-600'
                 }`}
               >
-                1 Falta
+                {pts}
               </button>
-              <button
-                onClick={() => setFaltaEnvido(2)}
-                className={`flex-1 p-2 rounded-lg text-base font-bold transition-all ${
-                  faltaEnvido === 2
-                    ? 'bg-amber-700 text-white'
-                    : 'bg-white text-amber-800 border-2 border-amber-400'
-                }`}
-              >
-                2 Faltas
-              </button>
-            </div>
-            <p className="text-sm text-amber-700 text-center">
-              {faltaEnvido === 1
-                ? 'Completa a ' + maxPoints
-                : 'Completa a 15 (malas) o ' + maxPoints + ' (buenas)'}
-            </p>
+            ))}
           </div>
 
-          {/* Start button */}
+          {/* Falta */}
+          <div className="flex gap-2">
+            {[1, 2].map((n) => (
+              <button
+                key={n}
+                onClick={() => setFaltaEnvido(n)}
+                className={`flex-1 py-2 rounded-lg font-medium transition ${
+                  faltaEnvido === n
+                    ? 'bg-red-600 text-white'
+                    : 'bg-gray-100 text-gray-600'
+                }`}
+              >
+                {n} Falta{n > 1 ? 's' : ''}
+              </button>
+            ))}
+          </div>
+
           <button
-            onClick={() => onStart({ team1, team2, maxPoints, withFlor, faltaEnvido })}
-            className="w-full p-4 bg-green-600 hover:bg-green-500 text-white rounded-xl text-2xl font-bold mt-4 shadow-lg"
+            onClick={() => onStart({ team1, team2, maxPoints, faltaEnvido })}
+            className="w-full py-4 bg-green-600 text-white rounded-xl font-bold text-xl"
           >
-            🃏 ¡Empezar!
+            Empezar
           </button>
         </div>
-
-        <p className="text-center mt-4 text-amber-400 text-sm">
-          Hecho con 🧉 en Argentina
-        </p>
       </div>
     </div>
   )
 }
 
-// Winner celebration
-function WinnerCelebration({ winner, onNewGame, onRematch }) {
+// Winner modal
+function WinnerModal({ winner, onRematch, onNewGame }) {
   useEffect(() => {
-    if (confetti) {
-      const duration = 3000
-      const end = Date.now() + duration
-      const frame = () => {
-        confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#FFD700', '#CC0000', '#00A550'] })
-        confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#FFD700', '#CC0000', '#00A550'] })
-        if (Date.now() < end) requestAnimationFrame(frame)
-      }
-      frame()
-    }
+    playSound('win')
   }, [])
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
     >
       <motion.div
-        initial={{ scale: 0 }}
+        initial={{ scale: 0.8 }}
         animate={{ scale: 1 }}
-        className="bg-amber-100 rounded-3xl p-8 text-center max-w-sm w-full shadow-2xl"
+        className="bg-white rounded-2xl p-6 text-center w-full max-w-xs shadow-2xl"
       >
-        <div className="text-6xl mb-4">🏆</div>
-        <h2 className="text-3xl font-bold text-amber-900 mb-2">¡Ganó!</h2>
-        <h3 className="text-4xl font-bold text-green-700 mb-6">{winner}</h3>
-        <div className="space-y-3">
-          <button onClick={onRematch} className="w-full p-4 bg-amber-600 text-white rounded-xl text-xl font-bold">
-            🔄 Revancha
-          </button>
-          <button onClick={onNewGame} className="w-full p-3 bg-gray-500 text-white rounded-xl text-lg font-bold">
-            ⚙️ Nueva Config
-          </button>
-        </div>
+        <div className="text-5xl mb-3">🏆</div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-1">¡Ganó!</h2>
+        <h3 className="text-3xl font-bold text-green-600 mb-6">{winner}</h3>
+        <button
+          onClick={onRematch}
+          className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold mb-2"
+        >
+          Revancha
+        </button>
+        <button
+          onClick={onNewGame}
+          className="w-full py-2 text-gray-500 font-medium"
+        >
+          Nueva partida
+        </button>
       </motion.div>
     </motion.div>
   )
 }
 
-// Main game screen
+// Game screen
 function GameScreen({ config, onNewGame }) {
   const [score1, setScore1] = useState(0)
   const [score2, setScore2] = useState(0)
   const [history, setHistory] = useState([])
   const [winner, setWinner] = useState(null)
 
-  // Check if in "buenas" (second half)
-  const isBuenas1 = score1 >= 15
-  const isBuenas2 = score2 >= 15
+  const phase1 = score1 >= 15 ? 'buenas' : 'malas'
+  const phase2 = score2 >= 15 ? 'buenas' : 'malas'
 
-  // Check for winner
   useEffect(() => {
-    if (score1 >= config.maxPoints) {
+    if (score1 >= config.maxPoints && !winner) {
       setWinner(config.team1)
-      playSound('win')
-    } else if (score2 >= config.maxPoints) {
+    } else if (score2 >= config.maxPoints && !winner) {
       setWinner(config.team2)
-      playSound('win')
     }
-  }, [score1, score2, config.maxPoints, config.team1, config.team2])
+  }, [score1, score2, config.maxPoints, config.team1, config.team2, winner])
 
-  const vibrate = () => {
-    if (navigator.vibrate) navigator.vibrate(50)
-  }
-
-  // Add points to team
   const addPoints = useCallback((team, points) => {
     if (winner) return
-    vibrate()
     playSound('tap')
+    if (navigator.vibrate) navigator.vibrate(30)
 
     if (team === 1) {
       setScore1((prev) => Math.min(prev + points, config.maxPoints))
     } else {
       setScore2((prev) => Math.min(prev + points, config.maxPoints))
     }
-    setHistory((prev) => [...prev, { team, points, timestamp: Date.now() }])
+    setHistory((prev) => [...prev, { team, points }])
   }, [winner, config.maxPoints])
 
-  // Calculate falta envido points
-  // The falta gives points based on what the LEADING team needs
   const getFaltaPoints = () => {
-    const leaderScore = Math.max(score1, score2)
-
+    const leader = Math.max(score1, score2)
     if (config.faltaEnvido === 1) {
-      // 1 Falta: completa directo a 30 (gana el partido)
-      return config.maxPoints - leaderScore
+      return config.maxPoints - leader
     } else {
-      // 2 Faltas: completa a 15 si líder está en malas, o a 30 si está en buenas
-      const leaderInBuenas = leaderScore >= 15
-      if (leaderInBuenas) {
-        return config.maxPoints - leaderScore
-      } else {
-        return 15 - leaderScore
-      }
+      return leader >= 15 ? config.maxPoints - leader : 15 - leader
     }
   }
 
-  // Undo last action
   const undo = () => {
     if (history.length === 0) return
-    playSound('undo')
     const last = history[history.length - 1]
-    if (last.team === 1) {
-      setScore1((prev) => Math.max(0, prev - last.points))
-    } else {
-      setScore2((prev) => Math.max(0, prev - last.points))
-    }
+    if (last.team === 1) setScore1((p) => Math.max(0, p - last.points))
+    else setScore2((p) => Math.max(0, p - last.points))
     setHistory((prev) => prev.slice(0, -1))
-    setWinner(null)
+    if (winner) setWinner(null)
   }
 
   const rematch = () => {
@@ -439,100 +288,91 @@ function GameScreen({ config, onNewGame }) {
   }
 
   return (
-    <div
-      className="min-h-screen flex flex-col"
-      style={{
-        background: 'linear-gradient(180deg, #5D4037 0%, #3E2723 100%)',
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-      }}
-    >
+    <div className="min-h-screen bg-amber-50 flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-center py-3 bg-black/30">
-        <span className="text-2xl font-bold text-white px-4 py-1 bg-amber-900 rounded-lg">
-          {config.maxPoints}
-        </span>
-      </div>
-
-      {/* Score columns */}
-      <div className="flex-1 flex p-2">
-        <ScoreColumn
-          score={score1}
-          maxScore={config.maxPoints}
-          teamName={config.team1}
-          onAdd={(pts) => addPoints(1, pts)}
-          isBuenas={isBuenas1}
-        />
-
-        {/* Divider */}
-        <div className="w-2 flex items-center justify-center">
-          <div className="h-full w-1 bg-gradient-to-b from-sky-300 via-white to-sky-300 rounded-full opacity-80" />
-        </div>
-
-        <ScoreColumn
-          score={score2}
-          maxScore={config.maxPoints}
-          teamName={config.team2}
-          onAdd={(pts) => addPoints(2, pts)}
-          isBuenas={isBuenas2}
-        />
-      </div>
-
-      {/* Bottom buttons */}
-      <div className="flex gap-2 p-3 bg-black/40">
-        <button
-          onClick={() => addPoints(1, 1)}
-          className="flex-1 py-2 bg-gray-600 text-white rounded-lg font-bold"
-        >
-          +1
-        </button>
-        <button
-          onClick={() => {
-            const pts = getFaltaPoints()
-            if (pts > 0) addPoints(1, pts)
-          }}
-          className="flex-1 py-2 bg-red-700 text-white rounded-lg font-bold text-sm"
-        >
-          Falta
-        </button>
+      <div className="flex items-center justify-between px-4 py-2 bg-white border-b">
+        <button onClick={onNewGame} className="text-gray-400 text-xl">⚙️</button>
+        <span className="font-bold text-gray-600">a {config.maxPoints}</span>
         <button
           onClick={undo}
           disabled={history.length === 0}
-          className="py-2 px-4 bg-gray-700 text-white rounded-lg font-bold disabled:opacity-50"
+          className="text-gray-400 text-xl disabled:opacity-30"
         >
           ↩️
         </button>
-        <button
-          onClick={() => {
-            const pts = getFaltaPoints()
-            if (pts > 0) addPoints(2, pts)
-          }}
-          className="flex-1 py-2 bg-red-700 text-white rounded-lg font-bold text-sm"
-        >
-          Falta
-        </button>
-        <button
-          onClick={() => addPoints(2, 1)}
-          className="flex-1 py-2 bg-gray-600 text-white rounded-lg font-bold"
-        >
-          +1
-        </button>
       </div>
 
-      {/* Settings button */}
-      <button
-        onClick={onNewGame}
-        className="absolute top-3 right-3 p-2 bg-black/30 rounded-full"
-      >
-        ⚙️
-      </button>
+      {/* Score board - paper style */}
+      <div className="flex-1 flex bg-white mx-3 my-2 rounded-lg shadow-md overflow-hidden border border-gray-200">
+        <ScoreSection
+          score={score1}
+          phase={phase1}
+          teamName={config.team1}
+          maxScore={config.maxPoints}
+        />
 
-      {/* Winner modal */}
+        <div className="w-px bg-gray-300" />
+
+        <ScoreSection
+          score={score2}
+          phase={phase2}
+          teamName={config.team2}
+          maxScore={config.maxPoints}
+        />
+      </div>
+
+      {/* Quick buttons */}
+      <div className="bg-white mx-3 mb-2 rounded-lg shadow-md p-3 border border-gray-200">
+        <div className="grid grid-cols-5 gap-2">
+          <button
+            onClick={() => addPoints(1, 1)}
+            className="py-3 bg-blue-100 text-blue-800 rounded-lg font-bold"
+          >
+            +1
+          </button>
+          <button
+            onClick={() => addPoints(1, 2)}
+            className="py-3 bg-blue-500 text-white rounded-lg font-bold"
+          >
+            +2
+          </button>
+          <button
+            onClick={() => {
+              const pts = getFaltaPoints()
+              if (pts > 0) addPoints(1, pts)
+            }}
+            className="py-3 bg-red-500 text-white rounded-lg font-bold text-xs"
+          >
+            FALTA<br/>{getFaltaPoints()}
+          </button>
+          <button
+            onClick={() => addPoints(2, 2)}
+            className="py-3 bg-orange-500 text-white rounded-lg font-bold"
+          >
+            +2
+          </button>
+          <button
+            onClick={() => addPoints(2, 1)}
+            className="py-3 bg-orange-100 text-orange-800 rounded-lg font-bold"
+          >
+            +1
+          </button>
+        </div>
+
+        {/* Labels */}
+        <div className="flex justify-between mt-1 px-1">
+          <span className="text-xs text-blue-600 font-medium">{config.team1}</span>
+          <span className="text-xs text-orange-600 font-medium">{config.team2}</span>
+        </div>
+      </div>
+
+      {/* Winner */}
       <AnimatePresence>
         {winner && (
-          <WinnerCelebration
+          <WinnerModal
             winner={winner}
-            onNewGame={onNewGame}
             onRematch={rematch}
+            onNewGame={onNewGame}
           />
         )}
       </AnimatePresence>
@@ -540,24 +380,16 @@ function GameScreen({ config, onNewGame }) {
   )
 }
 
-// Main component
 export default function Home() {
-  const [gameConfig, setGameConfig] = useState(null)
-
-  const handleStart = (config) => {
-    localStorage.setItem('trucoConfig', JSON.stringify(config))
-    setGameConfig(config)
-  }
+  const [config, setConfig] = useState(null)
 
   return (
-    <main>
-      <AnimatePresence mode="wait">
-        {gameConfig ? (
-          <GameScreen key="game" config={gameConfig} onNewGame={() => setGameConfig(null)} />
-        ) : (
-          <ConfigScreen key="config" onStart={handleStart} />
-        )}
-      </AnimatePresence>
-    </main>
+    <AnimatePresence mode="wait">
+      {config ? (
+        <GameScreen key="game" config={config} onNewGame={() => setConfig(null)} />
+      ) : (
+        <ConfigScreen key="config" onStart={setConfig} />
+      )}
+    </AnimatePresence>
   )
 }
