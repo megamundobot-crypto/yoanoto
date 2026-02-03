@@ -75,23 +75,28 @@ function BiromeCanvas({ onStrokeComplete, score1, score2, team1, team2, maxPoint
     setIsDrawing(false)
 
     if (currentPath.length > 3) {
-      const minX = Math.min(...currentPath.map(p => p.x))
-      const maxX = Math.max(...currentPath.map(p => p.x))
-      const minY = Math.min(...currentPath.map(p => p.y))
-      const maxY = Math.max(...currentPath.map(p => p.y))
-      const strokeLength = Math.max(maxX - minX, maxY - minY)
+      // Calculate total path length (sum of all segments)
+      let totalLength = 0
+      for (let i = 1; i < currentPath.length; i++) {
+        const dx = currentPath[i].x - currentPath[i-1].x
+        const dy = currentPath[i].y - currentPath[i-1].y
+        totalLength += Math.sqrt(dx*dx + dy*dy)
+      }
 
-      if (strokeLength > 20) {
+      if (totalLength > 30) {
         const avgX = currentPath.reduce((sum, p) => sum + p.x, 0) / currentPath.length
         const canvas = canvasRef.current
         const midX = canvas.width / 2
         const team = avgX < midX ? 1 : 2
 
-        // Flash feedback
-        setFlash({ team })
-        setTimeout(() => setFlash(null), 300)
+        // Points based on stroke length: every 60px = 1 point (min 1, max 5)
+        const points = Math.min(5, Math.max(1, Math.floor(totalLength / 60)))
 
-        onStrokeComplete(team)
+        // Flash feedback with points count
+        setFlash({ team, points })
+        setTimeout(() => setFlash(null), 400)
+
+        onStrokeComplete(team, points)
       }
     }
     setCurrentPath([])
@@ -108,12 +113,18 @@ function BiromeCanvas({ onStrokeComplete, score1, score2, team1, team2, maxPoint
 
     // Flash effect when point is scored
     if (flash) {
-      ctx.fillStyle = flash.team === 1 ? 'rgba(59, 130, 246, 0.2)' : 'rgba(249, 115, 22, 0.2)'
+      ctx.fillStyle = flash.team === 1 ? 'rgba(59, 130, 246, 0.25)' : 'rgba(249, 115, 22, 0.25)'
       if (flash.team === 1) {
         ctx.fillRect(0, 0, canvas.width / 2, canvas.height)
       } else {
         ctx.fillRect(canvas.width / 2, 0, canvas.width / 2, canvas.height)
       }
+      // Show points gained
+      ctx.font = 'bold 72px Georgia, serif'
+      ctx.textAlign = 'center'
+      ctx.fillStyle = flash.team === 1 ? 'rgba(59, 130, 246, 0.8)' : 'rgba(249, 115, 22, 0.8)'
+      const x = flash.team === 1 ? canvas.width / 4 : (canvas.width / 4) * 3
+      ctx.fillText(`+${flash.points}`, x, canvas.height / 2 + 20)
     }
 
     // Subtle grid lines like notebook paper
@@ -408,7 +419,7 @@ function GameScreen({ config, onNewGame }) {
           team1={config.team1}
           team2={config.team2}
           maxPoints={config.maxPoints}
-          onStrokeComplete={(team) => addPoints(team, 1)}
+          onStrokeComplete={(team, points) => addPoints(team, points)}
         />
       </div>
 
