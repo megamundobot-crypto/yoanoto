@@ -38,43 +38,42 @@ const playSound = (type) => {
   } catch (e) {}
 }
 
-// Simple tally mark - just a line
-function TallyMark({ index, total, isNew }) {
-  const isDiagonal = index === 4 // 5th mark crosses the others
+// Square tally group - forms a square with diagonal
+// 1: vertical left, 2: horizontal top, 3: vertical right, 4: horizontal bottom, 5: diagonal
+function TallySquare({ count }) {
+  const size = 36
+  const strokeWidth = 3
+  const color = '#1a365d'
 
   return (
-    <motion.div
-      initial={isNew ? { scaleY: 0 } : false}
-      animate={{ scaleY: 1 }}
-      transition={{ duration: 0.15 }}
-      style={{
-        position: isDiagonal ? 'absolute' : 'relative',
-        width: isDiagonal ? '3px' : '3px',
-        height: isDiagonal ? '40px' : '32px',
-        background: '#1a365d',
-        borderRadius: '1.5px',
-        transform: isDiagonal ? 'rotate(-30deg)' : 'none',
-        transformOrigin: 'bottom',
-        left: isDiagonal ? '50%' : 'auto',
-        top: isDiagonal ? '50%' : 'auto',
-        marginLeft: isDiagonal ? '-1.5px' : '0',
-        marginTop: isDiagonal ? '-20px' : '0',
-      }}
-    />
-  )
-}
-
-// Group of 5 tally marks
-function TallyGroup({ count }) {
-  return (
-    <div
-      className="relative flex items-end gap-1 mx-2 my-1"
-      style={{ height: '40px', width: '35px' }}
-    >
-      {[...Array(Math.min(count, 4))].map((_, i) => (
-        <TallyMark key={i} index={i} total={count} isNew={false} />
-      ))}
-      {count >= 5 && <TallyMark index={4} total={count} isNew={false} />}
+    <div className="relative mx-1 my-1" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        {/* 1: Left vertical */}
+        {count >= 1 && (
+          <line x1={strokeWidth} y1={2} x2={strokeWidth} y2={size-2}
+            stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+        )}
+        {/* 2: Top horizontal */}
+        {count >= 2 && (
+          <line x1={2} y1={strokeWidth} x2={size-2} y2={strokeWidth}
+            stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+        )}
+        {/* 3: Right vertical */}
+        {count >= 3 && (
+          <line x1={size-strokeWidth} y1={2} x2={size-strokeWidth} y2={size-2}
+            stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+        )}
+        {/* 4: Bottom horizontal */}
+        {count >= 4 && (
+          <line x1={2} y1={size-strokeWidth} x2={size-2} y2={size-strokeWidth}
+            stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+        )}
+        {/* 5: Diagonal crossing */}
+        {count >= 5 && (
+          <line x1={2} y1={size-2} x2={size-2} y2={2}
+            stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+        )}
+      </svg>
     </div>
   )
 }
@@ -104,9 +103,9 @@ function ScoreSection({ score, phase, teamName, maxScore }) {
       {/* Tally marks area */}
       <div className="flex-1 flex flex-wrap content-start justify-center p-3 min-h-[180px]">
         {[...Array(fullGroups)].map((_, i) => (
-          <TallyGroup key={i} count={5} />
+          <TallySquare key={i} count={5} />
         ))}
-        {remainder > 0 && <TallyGroup count={remainder} />}
+        {remainder > 0 && <TallySquare count={remainder} />}
         {displayScore === 0 && (
           <span className="text-gray-300 text-2xl mt-12">—</span>
         )}
@@ -323,16 +322,17 @@ function GameScreen({ config, onNewGame }) {
 
       {/* Quick buttons */}
       <div className="bg-white mx-3 mb-2 rounded-lg shadow-md p-3 border border-gray-200">
-        <div className="grid grid-cols-5 gap-2">
+        {/* Team 1 buttons */}
+        <div className="flex gap-2 mb-2">
           <button
             onClick={() => addPoints(1, 1)}
-            className="py-3 bg-blue-100 text-blue-800 rounded-lg font-bold"
+            className="flex-1 py-2 bg-blue-100 text-blue-800 rounded-lg font-bold"
           >
             +1
           </button>
           <button
             onClick={() => addPoints(1, 2)}
-            className="py-3 bg-blue-500 text-white rounded-lg font-bold"
+            className="flex-1 py-2 bg-blue-500 text-white rounded-lg font-bold"
           >
             +2
           </button>
@@ -341,29 +341,38 @@ function GameScreen({ config, onNewGame }) {
               const pts = getFaltaPoints()
               if (pts > 0) addPoints(1, pts)
             }}
-            className="py-3 bg-red-500 text-white rounded-lg font-bold text-xs"
+            className="flex-1 py-2 bg-red-600 text-white rounded-lg font-bold text-sm"
           >
-            FALTA<br/>{getFaltaPoints()}
+            Falta +{getFaltaPoints()}
+          </button>
+        </div>
+        <div className="text-center text-xs text-blue-600 font-medium mb-3">{config.team1}</div>
+
+        {/* Team 2 buttons */}
+        <div className="flex gap-2 mb-2">
+          <button
+            onClick={() => addPoints(2, 1)}
+            className="flex-1 py-2 bg-orange-100 text-orange-800 rounded-lg font-bold"
+          >
+            +1
           </button>
           <button
             onClick={() => addPoints(2, 2)}
-            className="py-3 bg-orange-500 text-white rounded-lg font-bold"
+            className="flex-1 py-2 bg-orange-500 text-white rounded-lg font-bold"
           >
             +2
           </button>
           <button
-            onClick={() => addPoints(2, 1)}
-            className="py-3 bg-orange-100 text-orange-800 rounded-lg font-bold"
+            onClick={() => {
+              const pts = getFaltaPoints()
+              if (pts > 0) addPoints(2, pts)
+            }}
+            className="flex-1 py-2 bg-red-600 text-white rounded-lg font-bold text-sm"
           >
-            +1
+            Falta +{getFaltaPoints()}
           </button>
         </div>
-
-        {/* Labels */}
-        <div className="flex justify-between mt-1 px-1">
-          <span className="text-xs text-blue-600 font-medium">{config.team1}</span>
-          <span className="text-xs text-orange-600 font-medium">{config.team2}</span>
-        </div>
+        <div className="text-center text-xs text-orange-600 font-medium">{config.team2}</div>
       </div>
 
       {/* Winner */}
