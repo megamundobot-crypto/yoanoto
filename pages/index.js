@@ -38,13 +38,11 @@ const playSound = (type) => {
   } catch (e) {}
 }
 
-// Drawing canvas for birome-style annotation
-function DrawingCanvas({ onStrokeComplete, team1Area, team2Area }) {
+// Birome drawing canvas - strokes stay permanently like real pen on paper
+function BiromeCanvas({ onStrokeComplete, strokes, setStrokes }) {
   const canvasRef = useRef(null)
   const [isDrawing, setIsDrawing] = useState(false)
   const [currentPath, setCurrentPath] = useState([])
-  const [paths, setPaths] = useState([])
-  const lastPointRef = useRef(null)
 
   const getPos = (e) => {
     const canvas = canvasRef.current
@@ -61,7 +59,6 @@ function DrawingCanvas({ onStrokeComplete, team1Area, team2Area }) {
     const pos = getPos(e)
     setIsDrawing(true)
     setCurrentPath([pos])
-    lastPointRef.current = pos
   }
 
   const draw = (e) => {
@@ -69,7 +66,6 @@ function DrawingCanvas({ onStrokeComplete, team1Area, team2Area }) {
     e.preventDefault()
     const pos = getPos(e)
     setCurrentPath(prev => [...prev, pos])
-    lastPointRef.current = pos
   }
 
   const stopDrawing = (e) => {
@@ -77,61 +73,79 @@ function DrawingCanvas({ onStrokeComplete, team1Area, team2Area }) {
     e.preventDefault()
     setIsDrawing(false)
 
-    if (currentPath.length > 5) {
-      // Check stroke length (minimum for a valid mark)
+    if (currentPath.length > 3) {
       const minX = Math.min(...currentPath.map(p => p.x))
       const maxX = Math.max(...currentPath.map(p => p.x))
       const minY = Math.min(...currentPath.map(p => p.y))
       const maxY = Math.max(...currentPath.map(p => p.y))
       const strokeLength = Math.max(maxX - minX, maxY - minY)
 
-      if (strokeLength > 30) {
-        // Determine which team's area
+      if (strokeLength > 20) {
         const avgX = currentPath.reduce((sum, p) => sum + p.x, 0) / currentPath.length
         const canvas = canvasRef.current
         const midX = canvas.width / 2
+        const team = avgX < midX ? 1 : 2
 
-        if (avgX < midX) {
-          onStrokeComplete(1)
-        } else {
-          onStrokeComplete(2)
+        // Save stroke permanently
+        const newStroke = {
+          points: [...currentPath],
+          team,
+          id: Date.now()
         }
-
-        // Add path to permanent paths (fade out after a moment)
-        const newPath = [...currentPath]
-        setPaths(prev => [...prev, { points: newPath, id: Date.now() }])
-
-        // Clear path after animation
-        setTimeout(() => {
-          setPaths(prev => prev.filter(p => p.id !== newPath.id))
-        }, 500)
+        setStrokes(prev => [...prev, newStroke])
+        onStrokeComplete(team)
       }
     }
     setCurrentPath([])
   }
 
-  // Draw on canvas
+  // Render canvas
   useEffect(() => {
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
 
-    // Clear
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    // Paper texture background
+    ctx.fillStyle = '#fffef8'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-    // Draw center line
-    ctx.strokeStyle = 'rgba(200, 200, 200, 0.5)'
+    // Subtle grid lines like notebook paper
+    ctx.strokeStyle = 'rgba(200, 200, 220, 0.3)'
+    ctx.lineWidth = 1
+    for (let y = 30; y < canvas.height; y += 30) {
+      ctx.beginPath()
+      ctx.moveTo(0, y)
+      ctx.lineTo(canvas.width, y)
+      ctx.stroke()
+    }
+
+    // Center divider
+    ctx.strokeStyle = 'rgba(200, 100, 100, 0.4)'
     ctx.lineWidth = 2
-    ctx.setLineDash([5, 5])
     ctx.beginPath()
     ctx.moveTo(canvas.width / 2, 0)
     ctx.lineTo(canvas.width / 2, canvas.height)
     ctx.stroke()
-    ctx.setLineDash([])
 
-    // Draw current path
+    // Draw all permanent strokes (birome style)
+    strokes.forEach(stroke => {
+      if (stroke.points.length > 1) {
+        ctx.strokeStyle = '#1a237e'
+        ctx.lineWidth = 2.5
+        ctx.lineCap = 'round'
+        ctx.lineJoin = 'round'
+        ctx.beginPath()
+        ctx.moveTo(stroke.points[0].x, stroke.points[0].y)
+        for (let i = 1; i < stroke.points.length; i++) {
+          ctx.lineTo(stroke.points[i].x, stroke.points[i].y)
+        }
+        ctx.stroke()
+      }
+    })
+
+    // Draw current stroke
     if (currentPath.length > 1) {
-      ctx.strokeStyle = '#1a365d'
-      ctx.lineWidth = 4
+      ctx.strokeStyle = '#1a237e'
+      ctx.lineWidth = 2.5
       ctx.lineCap = 'round'
       ctx.lineJoin = 'round'
       ctx.beginPath()
@@ -141,29 +155,15 @@ function DrawingCanvas({ onStrokeComplete, team1Area, team2Area }) {
       }
       ctx.stroke()
     }
-
-    // Draw fading paths
-    paths.forEach(path => {
-      ctx.strokeStyle = 'rgba(26, 54, 93, 0.3)'
-      ctx.lineWidth = 4
-      ctx.lineCap = 'round'
-      ctx.lineJoin = 'round'
-      ctx.beginPath()
-      ctx.moveTo(path.points[0].x, path.points[0].y)
-      for (let i = 1; i < path.points.length; i++) {
-        ctx.lineTo(path.points[i].x, path.points[i].y)
-      }
-      ctx.stroke()
-    })
-  }, [currentPath, paths])
+  }, [currentPath, strokes])
 
   return (
     <canvas
       ref={canvasRef}
       width={600}
-      height={400}
-      className="absolute inset-0 w-full h-full z-10 touch-none"
-      style={{ cursor: 'crosshair' }}
+      height={500}
+      className="w-full h-full touch-none rounded-lg"
+      style={{ cursor: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\'%3E%3Cpath fill=\'%231a237e\' d=\'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z\'/%3E%3C/svg%3E") 0 24, crosshair' }}
       onMouseDown={startDrawing}
       onMouseMove={draw}
       onMouseUp={stopDrawing}
@@ -175,82 +175,6 @@ function DrawingCanvas({ onStrokeComplete, team1Area, team2Area }) {
   )
 }
 
-// Square tally group - forms a square with diagonal
-// 1: vertical left, 2: horizontal top, 3: vertical right, 4: horizontal bottom, 5: diagonal
-function TallySquare({ count }) {
-  const size = 36
-  const strokeWidth = 3
-  const color = '#1a365d'
-
-  return (
-    <div className="relative mx-1 my-1" style={{ width: size, height: size }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        {/* 1: Left vertical */}
-        {count >= 1 && (
-          <line x1={strokeWidth} y1={2} x2={strokeWidth} y2={size-2}
-            stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-        )}
-        {/* 2: Top horizontal */}
-        {count >= 2 && (
-          <line x1={2} y1={strokeWidth} x2={size-2} y2={strokeWidth}
-            stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-        )}
-        {/* 3: Right vertical */}
-        {count >= 3 && (
-          <line x1={size-strokeWidth} y1={2} x2={size-strokeWidth} y2={size-2}
-            stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-        )}
-        {/* 4: Bottom horizontal */}
-        {count >= 4 && (
-          <line x1={2} y1={size-strokeWidth} x2={size-2} y2={size-strokeWidth}
-            stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-        )}
-        {/* 5: Diagonal crossing */}
-        {count >= 5 && (
-          <line x1={2} y1={size-2} x2={size-2} y2={2}
-            stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-        )}
-      </svg>
-    </div>
-  )
-}
-
-// Score display
-function ScoreSection({ score, phase, teamName, maxScore }) {
-  const displayScore = phase === 'buenas' ? score - 15 : score
-  const fullGroups = Math.floor(displayScore / 5)
-  const remainder = displayScore % 5
-
-  return (
-    <div className="flex-1 flex flex-col">
-      {/* Team name */}
-      <div className="text-center py-2 border-b-2 border-gray-300">
-        <h2 className="text-xl font-bold text-gray-800 uppercase tracking-wider">
-          {teamName}
-        </h2>
-      </div>
-
-      {/* Phase indicator */}
-      <div className={`text-center py-1 text-sm font-semibold ${
-        phase === 'buenas' ? 'bg-green-100 text-green-800' : 'bg-red-50 text-red-700'
-      }`}>
-        {displayScore} {phase === 'buenas' ? 'BUENAS' : 'MALAS'}
-      </div>
-
-      {/* Tally marks area */}
-      <div className="flex-1 flex flex-wrap content-start justify-center p-3 min-h-[180px]">
-        {[...Array(fullGroups)].map((_, i) => (
-          <TallySquare key={i} count={5} />
-        ))}
-        {remainder > 0 && <TallySquare count={remainder} />}
-        {displayScore === 0 && (
-          <span className="text-gray-300 text-2xl mt-12">—</span>
-        )}
-      </div>
-    </div>
-  )
-}
-
 // Config screen
 function ConfigScreen({ onStart }) {
   const [team1, setTeam1] = useState('Nosotros')
@@ -258,73 +182,90 @@ function ConfigScreen({ onStart }) {
   const [maxPoints, setMaxPoints] = useState(30)
   const [faltaEnvido, setFaltaEnvido] = useState(2)
 
+  const pointOptions = [6, 9, 12, 18, 24, 30]
+
   return (
-    <div className="min-h-screen bg-amber-50 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-xs">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-1">YoAnoto</h1>
-        <p className="text-center text-gray-500 mb-6">Anotador de Truco</p>
+    <div className="min-h-screen bg-gradient-to-b from-amber-100 to-amber-50 flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-sm">
+        <h1 className="text-4xl font-bold text-center text-gray-800 mb-1" style={{ fontFamily: 'Georgia, serif' }}>
+          YoAnoto
+        </h1>
+        <p className="text-center text-gray-500 mb-6">✏️ Anotador de Truco</p>
 
-        <div className="bg-white rounded-xl shadow-lg p-5 space-y-4">
+        <div className="bg-white rounded-2xl shadow-xl p-6 space-y-5">
           {/* Teams */}
-          <div className="flex gap-2 items-center">
-            <input
-              type="text"
-              value={team1}
-              onChange={(e) => setTeam1(e.target.value)}
-              className="flex-1 p-2 border-2 border-gray-200 rounded-lg text-center font-medium"
-              maxLength={10}
-            />
-            <span className="text-gray-400 font-bold">vs</span>
-            <input
-              type="text"
-              value={team2}
-              onChange={(e) => setTeam2(e.target.value)}
-              className="flex-1 p-2 border-2 border-gray-200 rounded-lg text-center font-medium"
-              maxLength={10}
-            />
+          <div>
+            <label className="text-xs text-gray-400 uppercase tracking-wider mb-2 block">Equipos</label>
+            <div className="flex gap-3 items-center">
+              <input
+                type="text"
+                value={team1}
+                onChange={(e) => setTeam1(e.target.value)}
+                className="flex-1 p-3 border-2 border-gray-200 rounded-xl text-center font-semibold focus:border-blue-400 focus:outline-none"
+                maxLength={12}
+              />
+              <span className="text-gray-300 font-bold text-lg">vs</span>
+              <input
+                type="text"
+                value={team2}
+                onChange={(e) => setTeam2(e.target.value)}
+                className="flex-1 p-3 border-2 border-gray-200 rounded-xl text-center font-semibold focus:border-orange-400 focus:outline-none"
+                maxLength={12}
+              />
+            </div>
           </div>
 
-          {/* Points */}
-          <div className="flex gap-2">
-            {[15, 30].map((pts) => (
-              <button
-                key={pts}
-                onClick={() => setMaxPoints(pts)}
-                className={`flex-1 py-3 rounded-lg font-bold text-lg transition ${
-                  maxPoints === pts
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-600'
-                }`}
-              >
-                {pts}
-              </button>
-            ))}
+          {/* Points - grid with all options */}
+          <div>
+            <label className="text-xs text-gray-400 uppercase tracking-wider mb-2 block">Puntos de la partida</label>
+            <div className="grid grid-cols-3 gap-2">
+              {pointOptions.map((pts) => (
+                <button
+                  key={pts}
+                  onClick={() => setMaxPoints(pts)}
+                  className={`py-3 rounded-xl font-bold text-lg transition-all ${
+                    maxPoints === pts
+                      ? 'bg-blue-600 text-white shadow-lg scale-105'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {pts}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Falta */}
-          <div className="flex gap-2">
-            {[1, 2].map((n) => (
-              <button
-                key={n}
-                onClick={() => setFaltaEnvido(n)}
-                className={`flex-1 py-2 rounded-lg font-medium transition ${
-                  faltaEnvido === n
-                    ? 'bg-red-600 text-white'
-                    : 'bg-gray-100 text-gray-600'
-                }`}
-              >
-                {n} Falta{n > 1 ? 's' : ''}
-              </button>
-            ))}
+          {/* Falta Envido */}
+          <div>
+            <label className="text-xs text-gray-400 uppercase tracking-wider mb-2 block">Falta Envido</label>
+            <div className="flex gap-2">
+              {[1, 2].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setFaltaEnvido(n)}
+                  className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
+                    faltaEnvido === n
+                      ? 'bg-red-600 text-white shadow-lg'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {n} Falta{n > 1 ? 's' : ''}
+                </button>
+              ))}
+            </div>
           </div>
 
           <button
             onClick={() => onStart({ team1, team2, maxPoints, faltaEnvido })}
-            className="w-full py-4 bg-green-600 text-white rounded-xl font-bold text-xl"
+            className="w-full py-4 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold text-xl shadow-lg transition-all active:scale-95"
           >
-            Empezar
+            ¡A jugar! 🎴
           </button>
         </div>
+
+        <p className="text-center text-gray-400 text-xs mt-4">
+          Dibujá con el dedo como si fuera una birome
+        </p>
       </div>
     </div>
   )
@@ -343,24 +284,24 @@ function WinnerModal({ winner, onRematch, onNewGame }) {
       className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
     >
       <motion.div
-        initial={{ scale: 0.8 }}
-        animate={{ scale: 1 }}
-        className="bg-white rounded-2xl p-6 text-center w-full max-w-xs shadow-2xl"
+        initial={{ scale: 0.8, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        className="bg-white rounded-2xl p-8 text-center w-full max-w-xs shadow-2xl"
       >
-        <div className="text-5xl mb-3">🏆</div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-1">¡Ganó!</h2>
+        <div className="text-6xl mb-4">🏆</div>
+        <h2 className="text-2xl font-bold text-gray-600 mb-1">¡Victoria!</h2>
         <h3 className="text-3xl font-bold text-green-600 mb-6">{winner}</h3>
         <button
           onClick={onRematch}
-          className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold mb-2"
+          className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold mb-3 transition-all"
         >
-          Revancha
+          🔄 Revancha
         </button>
         <button
           onClick={onNewGame}
-          className="w-full py-2 text-gray-500 font-medium"
+          className="w-full py-2 text-gray-500 font-medium hover:text-gray-700"
         >
-          Nueva partida
+          Nueva configuración
         </button>
       </motion.div>
     </motion.div>
@@ -373,9 +314,7 @@ function GameScreen({ config, onNewGame }) {
   const [score2, setScore2] = useState(0)
   const [history, setHistory] = useState([])
   const [winner, setWinner] = useState(null)
-
-  const phase1 = score1 >= 15 ? 'buenas' : 'malas'
-  const phase2 = score2 >= 15 ? 'buenas' : 'malas'
+  const [strokes, setStrokes] = useState([])
 
   useEffect(() => {
     if (score1 >= config.maxPoints && !winner) {
@@ -398,12 +337,13 @@ function GameScreen({ config, onNewGame }) {
     setHistory((prev) => [...prev, { team, points }])
   }, [winner, config.maxPoints])
 
-  const getFaltaPoints = () => {
-    const leader = Math.max(score1, score2)
+  const getFaltaPoints = (forTeam) => {
+    const opponentScore = forTeam === 1 ? score2 : score1
     if (config.faltaEnvido === 1) {
-      return config.maxPoints - leader
+      return config.maxPoints - Math.max(score1, score2)
     } else {
-      return leader >= 15 ? config.maxPoints - leader : 15 - leader
+      const leader = Math.max(score1, score2)
+      return leader >= (config.maxPoints / 2) ? config.maxPoints - leader : (config.maxPoints / 2) - leader
     }
   }
 
@@ -413,6 +353,15 @@ function GameScreen({ config, onNewGame }) {
     if (last.team === 1) setScore1((p) => Math.max(0, p - last.points))
     else setScore2((p) => Math.max(0, p - last.points))
     setHistory((prev) => prev.slice(0, -1))
+    // Also remove last stroke from that team
+    setStrokes(prev => {
+      const teamStrokes = prev.filter(s => s.team === last.team)
+      if (teamStrokes.length > 0) {
+        const lastStroke = teamStrokes[teamStrokes.length - 1]
+        return prev.filter(s => s.id !== lastStroke.id)
+      }
+      return prev
+    })
     if (winner) setWinner(null)
   }
 
@@ -421,103 +370,110 @@ function GameScreen({ config, onNewGame }) {
     setScore2(0)
     setHistory([])
     setWinner(null)
+    setStrokes([])
   }
 
   return (
     <div className="min-h-screen bg-amber-50 flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 bg-white border-b">
-        <button onClick={onNewGame} className="text-gray-400 text-xl">⚙️</button>
-        <span className="font-bold text-gray-600">a {config.maxPoints}</span>
+      <div className="flex items-center justify-between px-4 py-3 bg-white border-b shadow-sm">
+        <button onClick={onNewGame} className="text-2xl">⚙️</button>
+        <div className="text-center">
+          <span className="font-bold text-gray-700">Partida a {config.maxPoints}</span>
+          <span className="text-gray-400 text-sm ml-2">({config.faltaEnvido} falta{config.faltaEnvido > 1 ? 's' : ''})</span>
+        </div>
         <button
           onClick={undo}
           disabled={history.length === 0}
-          className="text-gray-400 text-xl disabled:opacity-30"
+          className="text-2xl disabled:opacity-30"
         >
           ↩️
         </button>
       </div>
 
-      {/* Score board - paper style with drawing overlay */}
-      <div className="flex-1 flex bg-white mx-3 my-2 rounded-lg shadow-md overflow-hidden border border-gray-200 relative">
-        <DrawingCanvas
+      {/* Score header */}
+      <div className="flex bg-white border-b">
+        <div className="flex-1 text-center py-2 border-r">
+          <div className="font-bold text-blue-700 text-lg">{config.team1}</div>
+          <div className="text-3xl font-bold text-gray-800">{score1}</div>
+        </div>
+        <div className="flex-1 text-center py-2">
+          <div className="font-bold text-orange-700 text-lg">{config.team2}</div>
+          <div className="text-3xl font-bold text-gray-800">{score2}</div>
+        </div>
+      </div>
+
+      {/* Drawing area - birome style */}
+      <div className="flex-1 mx-3 my-2 rounded-lg shadow-lg overflow-hidden border-2 border-gray-300">
+        <BiromeCanvas
+          strokes={strokes}
+          setStrokes={setStrokes}
           onStrokeComplete={(team) => addPoints(team, 1)}
         />
-        <ScoreSection
-          score={score1}
-          phase={phase1}
-          teamName={config.team1}
-          maxScore={config.maxPoints}
-        />
-
-        <div className="w-px bg-gray-300" />
-
-        <ScoreSection
-          score={score2}
-          phase={phase2}
-          teamName={config.team2}
-          maxScore={config.maxPoints}
-        />
       </div>
 
-      {/* Drawing hint */}
-      <div className="text-center text-xs text-gray-400 -mt-1 mb-1">
-        ✏️ Dibujá sobre el marcador para anotar +1
+      {/* Hint */}
+      <div className="text-center text-xs text-gray-400 mb-1">
+        ✏️ Dibujá en cada lado para anotar puntos
       </div>
 
-      {/* Quick buttons */}
-      <div className="bg-white mx-3 mb-2 rounded-lg shadow-md p-3 border border-gray-200">
-        {/* Team 1 buttons */}
-        <div className="flex gap-2 mb-2">
-          <button
-            onClick={() => addPoints(1, 1)}
-            className="flex-1 py-2 bg-blue-100 text-blue-800 rounded-lg font-bold"
-          >
-            +1
-          </button>
-          <button
-            onClick={() => addPoints(1, 2)}
-            className="flex-1 py-2 bg-blue-500 text-white rounded-lg font-bold"
-          >
-            +2
-          </button>
-          <button
-            onClick={() => {
-              const pts = getFaltaPoints()
-              if (pts > 0) addPoints(1, pts)
-            }}
-            className="flex-1 py-2 bg-red-600 text-white rounded-lg font-bold text-sm"
-          >
-            Falta +{getFaltaPoints()}
-          </button>
+      {/* Quick buttons - columns */}
+      <div className="flex gap-2 mx-3 mb-3">
+        {/* Team 1 column */}
+        <div className="flex-1 bg-blue-50 rounded-xl p-3 border-2 border-blue-200">
+          <div className="text-center text-xs text-blue-600 font-bold mb-2">{config.team1}</div>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => addPoints(1, 3)}
+              className="py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold text-lg transition-all active:scale-95"
+            >
+              +3
+            </button>
+            <button
+              onClick={() => addPoints(1, 6)}
+              className="py-3 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-bold text-lg transition-all active:scale-95"
+            >
+              +6
+            </button>
+            <button
+              onClick={() => {
+                const pts = getFaltaPoints(1)
+                if (pts > 0) addPoints(1, pts)
+              }}
+              className="py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold text-sm transition-all active:scale-95"
+            >
+              Falta +{getFaltaPoints(1)}
+            </button>
+          </div>
         </div>
-        <div className="text-center text-xs text-blue-600 font-medium mb-3">{config.team1}</div>
 
-        {/* Team 2 buttons */}
-        <div className="flex gap-2 mb-2">
-          <button
-            onClick={() => addPoints(2, 1)}
-            className="flex-1 py-2 bg-orange-100 text-orange-800 rounded-lg font-bold"
-          >
-            +1
-          </button>
-          <button
-            onClick={() => addPoints(2, 2)}
-            className="flex-1 py-2 bg-orange-500 text-white rounded-lg font-bold"
-          >
-            +2
-          </button>
-          <button
-            onClick={() => {
-              const pts = getFaltaPoints()
-              if (pts > 0) addPoints(2, pts)
-            }}
-            className="flex-1 py-2 bg-red-600 text-white rounded-lg font-bold text-sm"
-          >
-            Falta +{getFaltaPoints()}
-          </button>
+        {/* Team 2 column */}
+        <div className="flex-1 bg-orange-50 rounded-xl p-3 border-2 border-orange-200">
+          <div className="text-center text-xs text-orange-600 font-bold mb-2">{config.team2}</div>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => addPoints(2, 3)}
+              className="py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-bold text-lg transition-all active:scale-95"
+            >
+              +3
+            </button>
+            <button
+              onClick={() => addPoints(2, 6)}
+              className="py-3 bg-orange-700 hover:bg-orange-800 text-white rounded-lg font-bold text-lg transition-all active:scale-95"
+            >
+              +6
+            </button>
+            <button
+              onClick={() => {
+                const pts = getFaltaPoints(2)
+                if (pts > 0) addPoints(2, pts)
+              }}
+              className="py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold text-sm transition-all active:scale-95"
+            >
+              Falta +{getFaltaPoints(2)}
+            </button>
+          </div>
         </div>
-        <div className="text-center text-xs text-orange-600 font-medium">{config.team2}</div>
       </div>
 
       {/* Winner */}
