@@ -38,54 +38,43 @@ const playSound = (type) => {
   } catch (e) {}
 }
 
-// Birome canvas - tap to auto-draw strokes
+// Birome canvas - draws based on actual score, tap to add +1
 function BiromeCanvas({ onStrokeComplete, score1, score2, team1, team2, maxPoints }) {
   const canvasRef = useRef(null)
-  const [strokes, setStrokes] = useState({ team1: [], team2: [] })
-  const [animating, setAnimating] = useState(null)
+  const strokeCacheRef = useRef({ team1: [], team2: [] })
 
-  // Generate a random birome-style stroke for the tally system
-  const generateTallyStroke = (team, index) => {
+  // Generate wobble values for a stroke (cached so they don't change on re-render)
+  const getStrokeWithWobble = (team, index) => {
+    const cache = team === 1 ? strokeCacheRef.current.team1 : strokeCacheRef.current.team2
+    if (cache[index]) return cache[index]
+
     const canvas = canvasRef.current
+    if (!canvas) return null
+
     const halfWidth = canvas.width / 2
-    const baseX = team === 1 ? 40 : halfWidth + 40
+    const baseX = team === 1 ? 30 : halfWidth + 30
     const groupIndex = Math.floor(index / 5)
     const strokeInGroup = index % 5
 
-    // Position groups in a grid
     const groupCol = groupIndex % 3
     const groupRow = Math.floor(groupIndex / 3)
-    const groupX = baseX + groupCol * 80
-    const groupY = 60 + groupRow * 70
-    const size = 40
+    const groupX = baseX + groupCol * 75
+    const groupY = 55 + groupRow * 65
+    const size = 35
 
-    // Generate stroke based on position in group (square pattern)
     let x1, y1, x2, y2
     switch (strokeInGroup) {
-      case 0: // Left vertical
-        x1 = groupX; y1 = groupY; x2 = groupX; y2 = groupY + size
-        break
-      case 1: // Top horizontal
-        x1 = groupX; y1 = groupY; x2 = groupX + size; y2 = groupY
-        break
-      case 2: // Right vertical
-        x1 = groupX + size; y1 = groupY; x2 = groupX + size; y2 = groupY + size
-        break
-      case 3: // Bottom horizontal
-        x1 = groupX; y1 = groupY + size; x2 = groupX + size; y2 = groupY + size
-        break
-      case 4: // Diagonal
-        x1 = groupX; y1 = groupY + size; x2 = groupX + size; y2 = groupY
-        break
+      case 0: x1 = groupX; y1 = groupY; x2 = groupX; y2 = groupY + size; break
+      case 1: x1 = groupX; y1 = groupY; x2 = groupX + size; y2 = groupY; break
+      case 2: x1 = groupX + size; y1 = groupY; x2 = groupX + size; y2 = groupY + size; break
+      case 3: x1 = groupX; y1 = groupY + size; x2 = groupX + size; y2 = groupY + size; break
+      case 4: x1 = groupX; y1 = groupY + size; x2 = groupX + size; y2 = groupY; break
     }
 
-    // Add hand-drawn wobble
-    const wobble = () => (Math.random() - 0.5) * 4
-    return {
-      x1: x1 + wobble(), y1: y1 + wobble(),
-      x2: x2 + wobble(), y2: y2 + wobble(),
-      progress: 0
-    }
+    const wobble = () => (Math.random() - 0.5) * 3
+    const stroke = { x1: x1 + wobble(), y1: y1 + wobble(), x2: x2 + wobble(), y2: y2 + wobble() }
+    cache[index] = stroke
+    return stroke
   }
 
   const handleTap = (e) => {
@@ -95,45 +84,33 @@ function BiromeCanvas({ onStrokeComplete, score1, score2, team1, team2, maxPoint
     const touch = e.touches ? e.touches[0] : e
     const x = (touch.clientX - rect.left) * (canvas.width / rect.width)
     const team = x < canvas.width / 2 ? 1 : 2
-    const teamKey = team === 1 ? 'team1' : 'team2'
-
-    // Generate new stroke
-    const newStroke = generateTallyStroke(team, strokes[teamKey].length)
-
-    // Animate the stroke
-    setAnimating({ team, stroke: newStroke })
-
-    let progress = 0
-    const animate = () => {
-      progress += 0.15
-      if (progress >= 1) {
-        setStrokes(prev => ({
-          ...prev,
-          [teamKey]: [...prev[teamKey], { ...newStroke, progress: 1 }]
-        }))
-        setAnimating(null)
-        onStrokeComplete(team, 1)
-      } else {
-        setAnimating({ team, stroke: { ...newStroke, progress } })
-        requestAnimationFrame(animate)
-      }
-    }
-    requestAnimationFrame(animate)
+    playSound('tap')
+    if (navigator.vibrate) navigator.vibrate(30)
+    onStrokeComplete(team, 1)
   }
 
-  // Render canvas
+  // Render canvas based on actual scores
   useEffect(() => {
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
+    const halfPoints = maxPoints / 2
 
-    // Paper background
-    ctx.fillStyle = '#fffef8'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    // Determine phases
+    const phase1 = score1 >= halfPoints ? 'buenas' : 'malas'
+    const phase2 = score2 >= halfPoints ? 'buenas' : 'malas'
+    const display1 = phase1 === 'buenas' ? score1 - halfPoints : score1
+    const display2 = phase2 === 'buenas' ? score2 - halfPoints : score2
+
+    // Background with phase colors
+    ctx.fillStyle = phase1 === 'buenas' ? '#ecfdf5' : '#fef2f2'
+    ctx.fillRect(0, 0, canvas.width / 2, canvas.height)
+    ctx.fillStyle = phase2 === 'buenas' ? '#ecfdf5' : '#fef2f2'
+    ctx.fillRect(canvas.width / 2, 0, canvas.width / 2, canvas.height)
 
     // Notebook lines
-    ctx.strokeStyle = 'rgba(200, 200, 220, 0.3)'
+    ctx.strokeStyle = 'rgba(200, 200, 220, 0.4)'
     ctx.lineWidth = 1
-    for (let y = 30; y < canvas.height; y += 30) {
+    for (let y = 45; y < canvas.height; y += 30) {
       ctx.beginPath()
       ctx.moveTo(0, y)
       ctx.lineTo(canvas.width, y)
@@ -141,53 +118,55 @@ function BiromeCanvas({ onStrokeComplete, score1, score2, team1, team2, maxPoint
     }
 
     // Center divider
-    ctx.strokeStyle = 'rgba(200, 100, 100, 0.5)'
+    ctx.strokeStyle = 'rgba(150, 100, 100, 0.6)'
     ctx.lineWidth = 2
     ctx.beginPath()
     ctx.moveTo(canvas.width / 2, 0)
     ctx.lineTo(canvas.width / 2, canvas.height)
     ctx.stroke()
 
-    // Team labels
-    ctx.font = 'bold 18px sans-serif'
+    // Team labels with phase indicator
+    ctx.font = 'bold 16px sans-serif'
     ctx.textAlign = 'center'
-    ctx.fillStyle = '#3b82f6'
-    ctx.fillText(team1, canvas.width / 4, 28)
-    ctx.fillStyle = '#f97316'
-    ctx.fillText(team2, (canvas.width / 4) * 3, 28)
+    ctx.fillStyle = phase1 === 'buenas' ? '#059669' : '#dc2626'
+    ctx.fillText(`${team1} - ${phase1 === 'buenas' ? 'BUENAS' : 'MALAS'}`, canvas.width / 4, 22)
+    ctx.fillStyle = phase2 === 'buenas' ? '#059669' : '#dc2626'
+    ctx.fillText(`${team2} - ${phase2 === 'buenas' ? 'BUENAS' : 'MALAS'}`, (canvas.width / 4) * 3, 22)
 
-    // Draw all strokes (birome style)
+    // Draw strokes based on display score
     const drawStroke = (stroke, color) => {
+      if (!stroke) return
       ctx.strokeStyle = color
       ctx.lineWidth = 2.5
       ctx.lineCap = 'round'
       ctx.beginPath()
       ctx.moveTo(stroke.x1, stroke.y1)
-      const endX = stroke.x1 + (stroke.x2 - stroke.x1) * stroke.progress
-      const endY = stroke.y1 + (stroke.y2 - stroke.y1) * stroke.progress
-      ctx.lineTo(endX, endY)
+      ctx.lineTo(stroke.x2, stroke.y2)
       ctx.stroke()
     }
 
-    strokes.team1.forEach(s => drawStroke(s, '#1e3a8a'))
-    strokes.team2.forEach(s => drawStroke(s, '#c2410c'))
+    const color1 = phase1 === 'buenas' ? '#047857' : '#1e3a8a'
+    const color2 = phase2 === 'buenas' ? '#047857' : '#9a3412'
 
-    if (animating) {
-      drawStroke(animating.stroke, animating.team === 1 ? '#1e3a8a' : '#c2410c')
+    for (let i = 0; i < display1; i++) {
+      drawStroke(getStrokeWithWobble(1, i), color1)
+    }
+    for (let i = 0; i < display2; i++) {
+      drawStroke(getStrokeWithWobble(2, i), color2)
     }
 
-    // Tap hint at bottom
-    ctx.font = '14px sans-serif'
-    ctx.fillStyle = 'rgba(150, 150, 150, 0.6)'
-    ctx.fillText('👆 Tocá para anotar', canvas.width / 4, canvas.height - 15)
-    ctx.fillText('👆 Tocá para anotar', (canvas.width / 4) * 3, canvas.height - 15)
+    // Tap hint
+    ctx.font = '13px sans-serif'
+    ctx.fillStyle = 'rgba(120, 120, 120, 0.5)'
+    ctx.fillText('👆 Tocá para +1', canvas.width / 4, canvas.height - 12)
+    ctx.fillText('👆 Tocá para +1', (canvas.width / 4) * 3, canvas.height - 12)
 
-  }, [strokes, animating, team1, team2])
+  }, [score1, score2, team1, team2, maxPoints])
 
-  // Reset strokes when scores reset
+  // Reset cache when scores reset
   useEffect(() => {
     if (score1 === 0 && score2 === 0) {
-      setStrokes({ team1: [], team2: [] })
+      strokeCacheRef.current = { team1: [], team2: [] }
     }
   }, [score1, score2])
 
