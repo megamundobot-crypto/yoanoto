@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // Sound effects
@@ -36,6 +36,143 @@ const playSound = (type) => {
       })
     }
   } catch (e) {}
+}
+
+// Drawing canvas for birome-style annotation
+function DrawingCanvas({ onStrokeComplete, team1Area, team2Area }) {
+  const canvasRef = useRef(null)
+  const [isDrawing, setIsDrawing] = useState(false)
+  const [currentPath, setCurrentPath] = useState([])
+  const [paths, setPaths] = useState([])
+  const lastPointRef = useRef(null)
+
+  const getPos = (e) => {
+    const canvas = canvasRef.current
+    const rect = canvas.getBoundingClientRect()
+    const touch = e.touches ? e.touches[0] : e
+    return {
+      x: (touch.clientX - rect.left) * (canvas.width / rect.width),
+      y: (touch.clientY - rect.top) * (canvas.height / rect.height)
+    }
+  }
+
+  const startDrawing = (e) => {
+    e.preventDefault()
+    const pos = getPos(e)
+    setIsDrawing(true)
+    setCurrentPath([pos])
+    lastPointRef.current = pos
+  }
+
+  const draw = (e) => {
+    if (!isDrawing) return
+    e.preventDefault()
+    const pos = getPos(e)
+    setCurrentPath(prev => [...prev, pos])
+    lastPointRef.current = pos
+  }
+
+  const stopDrawing = (e) => {
+    if (!isDrawing) return
+    e.preventDefault()
+    setIsDrawing(false)
+
+    if (currentPath.length > 5) {
+      // Check stroke length (minimum for a valid mark)
+      const minX = Math.min(...currentPath.map(p => p.x))
+      const maxX = Math.max(...currentPath.map(p => p.x))
+      const minY = Math.min(...currentPath.map(p => p.y))
+      const maxY = Math.max(...currentPath.map(p => p.y))
+      const strokeLength = Math.max(maxX - minX, maxY - minY)
+
+      if (strokeLength > 30) {
+        // Determine which team's area
+        const avgX = currentPath.reduce((sum, p) => sum + p.x, 0) / currentPath.length
+        const canvas = canvasRef.current
+        const midX = canvas.width / 2
+
+        if (avgX < midX) {
+          onStrokeComplete(1)
+        } else {
+          onStrokeComplete(2)
+        }
+
+        // Add path to permanent paths (fade out after a moment)
+        const newPath = [...currentPath]
+        setPaths(prev => [...prev, { points: newPath, id: Date.now() }])
+
+        // Clear path after animation
+        setTimeout(() => {
+          setPaths(prev => prev.filter(p => p.id !== newPath.id))
+        }, 500)
+      }
+    }
+    setCurrentPath([])
+  }
+
+  // Draw on canvas
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+
+    // Clear
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+    // Draw center line
+    ctx.strokeStyle = 'rgba(200, 200, 200, 0.5)'
+    ctx.lineWidth = 2
+    ctx.setLineDash([5, 5])
+    ctx.beginPath()
+    ctx.moveTo(canvas.width / 2, 0)
+    ctx.lineTo(canvas.width / 2, canvas.height)
+    ctx.stroke()
+    ctx.setLineDash([])
+
+    // Draw current path
+    if (currentPath.length > 1) {
+      ctx.strokeStyle = '#1a365d'
+      ctx.lineWidth = 4
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+      ctx.beginPath()
+      ctx.moveTo(currentPath[0].x, currentPath[0].y)
+      for (let i = 1; i < currentPath.length; i++) {
+        ctx.lineTo(currentPath[i].x, currentPath[i].y)
+      }
+      ctx.stroke()
+    }
+
+    // Draw fading paths
+    paths.forEach(path => {
+      ctx.strokeStyle = 'rgba(26, 54, 93, 0.3)'
+      ctx.lineWidth = 4
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+      ctx.beginPath()
+      ctx.moveTo(path.points[0].x, path.points[0].y)
+      for (let i = 1; i < path.points.length; i++) {
+        ctx.lineTo(path.points[i].x, path.points[i].y)
+      }
+      ctx.stroke()
+    })
+  }, [currentPath, paths])
+
+  return (
+    <canvas
+      ref={canvasRef}
+      width={600}
+      height={400}
+      className="absolute inset-0 w-full h-full z-10 touch-none"
+      style={{ cursor: 'crosshair' }}
+      onMouseDown={startDrawing}
+      onMouseMove={draw}
+      onMouseUp={stopDrawing}
+      onMouseLeave={stopDrawing}
+      onTouchStart={startDrawing}
+      onTouchMove={draw}
+      onTouchEnd={stopDrawing}
+    />
+  )
 }
 
 // Square tally group - forms a square with diagonal
@@ -301,8 +438,11 @@ function GameScreen({ config, onNewGame }) {
         </button>
       </div>
 
-      {/* Score board - paper style */}
-      <div className="flex-1 flex bg-white mx-3 my-2 rounded-lg shadow-md overflow-hidden border border-gray-200">
+      {/* Score board - paper style with drawing overlay */}
+      <div className="flex-1 flex bg-white mx-3 my-2 rounded-lg shadow-md overflow-hidden border border-gray-200 relative">
+        <DrawingCanvas
+          onStrokeComplete={(team) => addPoints(team, 1)}
+        />
         <ScoreSection
           score={score1}
           phase={phase1}
@@ -318,6 +458,11 @@ function GameScreen({ config, onNewGame }) {
           teamName={config.team2}
           maxScore={config.maxPoints}
         />
+      </div>
+
+      {/* Drawing hint */}
+      <div className="text-center text-xs text-gray-400 -mt-1 mb-1">
+        ✏️ Dibujá sobre el marcador para anotar +1
       </div>
 
       {/* Quick buttons */}
