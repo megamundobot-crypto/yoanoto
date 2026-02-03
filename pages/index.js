@@ -25,7 +25,7 @@ const QUICK_SCORES = [
   { label: 'Truco', points: 2, icon: '🃏' },
   { label: 'Retruco', points: 3, icon: '🔥' },
   { label: 'Vale 4', points: 4, icon: '💎' },
-  { label: 'Flor', points: 3, icon: '🌸' },
+  { label: 'Flor', points: 3, icon: '🎴' },
 ]
 
 // Chapita component
@@ -207,7 +207,7 @@ function ConfigScreen({ onStart }) {
         {/* Flor toggle */}
         <div className="flex items-center justify-between p-3 bg-white/60 dark:bg-gray-700 rounded-xl">
           <span className="text-xl text-amber-900 dark:text-amber-200">
-            🌸 Con Flor
+            🃏 Con Flor
           </span>
           <button
             onClick={() => setWithFlor(!withFlor)}
@@ -224,7 +224,7 @@ function ConfigScreen({ onStart }) {
         {/* Falta Envido */}
         <div className="space-y-3">
           <label className="text-xl text-amber-900 dark:text-amber-200 block">
-            💀 Falta Envido vale
+            💀 Falta Envido
           </label>
           <div className="flex gap-3">
             <button
@@ -235,7 +235,7 @@ function ConfigScreen({ onStart }) {
                   : 'bg-white/60 dark:bg-gray-700 text-amber-800 dark:text-amber-200 border-2 border-amber-400'
               }`}
             >
-              Lo que falta
+              1 Falta
             </button>
             <button
               onClick={() => setFaltaEnvido(2)}
@@ -245,13 +245,13 @@ function ConfigScreen({ onStart }) {
                   : 'bg-white/60 dark:bg-gray-700 text-amber-800 dark:text-amber-200 border-2 border-amber-400'
               }`}
             >
-              El resto
+              2 Faltas
             </button>
           </div>
           <p className="text-sm text-amber-700 dark:text-amber-400 text-center">
             {faltaEnvido === 1
-              ? 'Lo que le falta al que acepta'
-              : 'El resto del partido para quien gana'}
+              ? 'Una sola falta envido por mano'
+              : 'Se puede cantar falta envido dos veces'}
           </p>
         </div>
 
@@ -386,7 +386,7 @@ function RulesModal({ onClose }) {
           </section>
 
           <section>
-            <h3 className="font-bold text-xl mb-2">🌸 La Flor</h3>
+            <h3 className="font-bold text-xl mb-2">🎴 La Flor</h3>
             <p>• Flor: 3 puntos (sin oposición)</p>
             <p>• Contra Flor: 4 puntos</p>
             <p>• Contra Flor al Resto: El resto</p>
