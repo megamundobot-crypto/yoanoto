@@ -77,12 +77,19 @@ function BiromeCanvas({ onStrokeComplete, score1, score2, team1, team2, maxPoint
     return stroke
   }
 
+  const lastTapRef = useRef(0)
+
   const handleTap = (e) => {
     e.preventDefault()
     e.stopPropagation()
+
+    // Prevent double tap (touch + mouse)
+    const now = Date.now()
+    if (now - lastTapRef.current < 300) return
+    lastTapRef.current = now
+
     const canvas = canvasRef.current
     const rect = canvas.getBoundingClientRect()
-    // Handle both touch and mouse events
     let clientX
     if (e.touches && e.touches.length > 0) {
       clientX = e.touches[0].clientX
