@@ -99,7 +99,7 @@ function ConfigScreen({ onStart }) {
             <h1 className="text-3xl font-black text-white tracking-tight drop-shadow-lg">
               YoAnoto
             </h1>
-            <p className="text-emerald-300 text-sm">Anotador de Truco Argentino</p>
+            <p className="text-emerald-300 text-sm">Anotador de Truco QUITILIPIENSE</p>
           </motion.div>
 
           <motion.div
@@ -462,7 +462,7 @@ export default function Home() {
     <>
       <Head>
         <title>YoAnoto - Anotador de Truco</title>
-        <meta name="description" content="Anotador de Truco Argentino - El mejor anotador para tus partidas" />
+        <meta name="description" content="Anotador de Truco QUITILIPIENSE - El mejor anotador para tus partidas" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
         <meta name="theme-color" content="#065f46" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
