@@ -80,7 +80,10 @@ function ConfigScreen({ onStart }) {
   const pointOptions = [6, 9, 12, 18, 24, 30]
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-800 via-emerald-900 to-black flex flex-col">
+    <div
+      className="min-h-screen bg-gradient-to-b from-emerald-800 via-emerald-900 to-black flex flex-col"
+      style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+    >
       <Head>
         <title>YoAnoto - Anotador de Truco</title>
       </Head>
@@ -301,8 +304,11 @@ function GameScreen({ config, onNewGame }) {
         <title>{score1} - {score2} | YoAnoto</title>
       </Head>
 
-      {/* Header - compact */}
-      <div className="flex items-center justify-between px-3 py-2 bg-emerald-800 text-white">
+      {/* Header - compact with safe area for iPhone notch */}
+      <div
+        className="flex items-center justify-between px-3 py-2 bg-emerald-800 text-white"
+        style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top, 0px))' }}
+      >
         <button onClick={onNewGame} className="p-2 active:bg-emerald-700 rounded-lg">
           ⚙️
         </button>
@@ -361,8 +367,11 @@ function GameScreen({ config, onNewGame }) {
         </div>
       </div>
 
-      {/* Quick buttons - ALWAYS VISIBLE */}
-      <div className="bg-white border-t-2 border-gray-300 p-2 shadow-lg">
+      {/* Quick buttons - ALWAYS VISIBLE with safe area for iPhone home indicator */}
+      <div
+        className="bg-white border-t-2 border-gray-300 p-2 shadow-lg"
+        style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0px))' }}
+      >
         {/* Row 1: +3 +4 +6 buttons */}
         <div className="flex gap-1.5 mb-1.5">
           {/* Team 1 buttons */}
