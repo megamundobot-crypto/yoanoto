@@ -80,44 +80,42 @@ function ConfigScreen({ onStart }) {
   const pointOptions = [6, 9, 12, 18, 24, 30]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-900 via-green-800 to-green-900 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-b from-green-800 to-green-900 flex flex-col p-4 overflow-auto">
       <Head>
         <title>YoAnoto - Anotador de Truco</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-sm mx-auto flex-1 flex flex-col justify-center py-4">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-block bg-white rounded-full p-4 shadow-2xl mb-4">
-            <span className="text-6xl">🎴</span>
-          </div>
-          <h1 className="text-5xl font-black text-white drop-shadow-lg tracking-tight">
+        <div className="text-center mb-6">
+          <div className="text-7xl mb-2">🎴</div>
+          <h1 className="text-4xl font-black text-white tracking-tight">
             YoAnoto
           </h1>
-          <p className="text-green-200 text-lg mt-2">Anotador de Truco Argentino</p>
+          <p className="text-green-300 text-sm mt-1">Anotador de Truco</p>
         </div>
 
-        <div className="bg-white/95 backdrop-blur rounded-3xl shadow-2xl p-6 space-y-6">
+        <div className="bg-white rounded-2xl shadow-xl p-4 space-y-4">
           {/* Teams */}
           <div>
-            <label className="text-sm text-gray-500 font-semibold uppercase tracking-wider mb-3 block">
-              ⚔️ Equipos
+            <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">
+              Equipos
             </label>
-            <div className="flex gap-3 items-center">
+            <div className="flex gap-2 items-center">
               <input
                 type="text"
                 value={team1}
                 onChange={(e) => setTeam1(e.target.value)}
-                className="flex-1 p-4 bg-blue-50 border-2 border-blue-200 rounded-2xl text-center font-bold text-blue-800 text-lg focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                className="flex-1 min-w-0 p-3 bg-blue-50 border-2 border-blue-200 rounded-xl text-center font-bold text-blue-800 focus:border-blue-500 focus:outline-none"
                 maxLength={10}
               />
-              <span className="text-2xl">⚡</span>
+              <span className="text-xl flex-shrink-0">⚡</span>
               <input
                 type="text"
                 value={team2}
                 onChange={(e) => setTeam2(e.target.value)}
-                className="flex-1 p-4 bg-orange-50 border-2 border-orange-200 rounded-2xl text-center font-bold text-orange-800 text-lg focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
+                className="flex-1 min-w-0 p-3 bg-orange-50 border-2 border-orange-200 rounded-xl text-center font-bold text-orange-800 focus:border-orange-500 focus:outline-none"
                 maxLength={10}
               />
             </div>
@@ -125,18 +123,18 @@ function ConfigScreen({ onStart }) {
 
           {/* Points */}
           <div>
-            <label className="text-sm text-gray-500 font-semibold uppercase tracking-wider mb-3 block">
-              🎯 Puntos de la Partida
+            <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">
+              Puntos
             </label>
-            <div className="grid grid-cols-6 gap-2">
+            <div className="grid grid-cols-6 gap-1.5">
               {pointOptions.map((pts) => (
                 <button
                   key={pts}
                   onClick={() => setMaxPoints(pts)}
-                  className={`py-4 rounded-xl font-black text-xl transition-all ${
+                  className={`py-3 rounded-lg font-bold text-lg transition-all ${
                     maxPoints === pts
-                      ? 'bg-green-600 text-white shadow-lg scale-110 ring-4 ring-green-300'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:scale-105'
+                      ? 'bg-green-600 text-white shadow-md'
+                      : 'bg-gray-100 text-gray-600 active:bg-gray-200'
                   }`}
                 >
                   {pts}
@@ -147,18 +145,18 @@ function ConfigScreen({ onStart }) {
 
           {/* Falta Envido */}
           <div>
-            <label className="text-sm text-gray-500 font-semibold uppercase tracking-wider mb-3 block">
-              🃏 Falta Envido
+            <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">
+              Falta Envido
             </label>
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               {[1, 2].map((n) => (
                 <button
                   key={n}
                   onClick={() => setFaltaEnvido(n)}
-                  className={`flex-1 py-4 rounded-xl font-bold text-lg transition-all ${
+                  className={`flex-1 py-3 rounded-lg font-bold text-lg transition-all ${
                     faltaEnvido === n
-                      ? 'bg-red-600 text-white shadow-lg ring-4 ring-red-300'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'bg-red-600 text-white shadow-md'
+                      : 'bg-gray-100 text-gray-600 active:bg-gray-200'
                   }`}
                 >
                   {n} Falta{n > 1 ? 's' : ''}
@@ -169,15 +167,11 @@ function ConfigScreen({ onStart }) {
 
           <button
             onClick={() => onStart({ team1, team2, maxPoints, faltaEnvido })}
-            className="w-full py-5 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded-2xl font-black text-2xl shadow-xl transition-all active:scale-95 ring-4 ring-green-300/50"
+            className="w-full py-4 bg-green-600 active:bg-green-700 text-white rounded-xl font-black text-xl shadow-lg transition-all active:scale-98"
           >
             ¡JUGAR! 🎴
           </button>
         </div>
-
-        <p className="text-center text-green-300/70 text-sm mt-6">
-          Tocá cada lado para sumar puntos
-        </p>
       </div>
     </div>
   )
