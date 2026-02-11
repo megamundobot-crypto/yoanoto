@@ -230,12 +230,59 @@ function WinnerModal({ winner, onRematch, onNewGame }) {
   )
 }
 
+// Exit confirmation modal
+function ExitConfirmModal({ score1, score2, team1, team2, onConfirm, onCancel }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+    >
+      <motion.div
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.8, opacity: 0 }}
+        className="bg-white rounded-2xl p-5 text-center w-full max-w-xs shadow-2xl"
+      >
+        <div className="text-5xl mb-3">⚠️</div>
+        <h2 className="text-xl font-bold text-gray-800 mb-2">¿Salir del partido?</h2>
+        <p className="text-gray-600 mb-4">
+          Vas a perder el marcador actual:
+        </p>
+        <div className="bg-gray-100 rounded-xl p-3 mb-4">
+          <div className="flex justify-center items-center gap-4 text-2xl font-black">
+            <span className="text-blue-700">{team1}: {score1}</span>
+            <span className="text-gray-400">-</span>
+            <span className="text-orange-700">{team2}: {score2}</span>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={onCancel}
+            className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold text-lg shadow active:scale-95"
+          >
+            Seguir
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-lg shadow active:scale-95"
+          >
+            Salir
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
 // Game screen - FIXED LAYOUT with always visible buttons
 function GameScreen({ config, onNewGame }) {
   const [score1, setScore1] = useState(0)
   const [score2, setScore2] = useState(0)
   const [history, setHistory] = useState([])
   const [winner, setWinner] = useState(null)
+  const [showExitConfirm, setShowExitConfirm] = useState(false)
   const lastTapRef = useRef({ team1: 0, team2: 0 })
 
   const halfPoints = config.maxPoints / 2
@@ -309,7 +356,16 @@ function GameScreen({ config, onNewGame }) {
         className="flex items-center justify-between px-3 py-2 bg-emerald-800 text-white"
         style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top, 0px))' }}
       >
-        <button onClick={onNewGame} className="p-2 active:bg-emerald-700 rounded-lg">
+        <button
+          onClick={() => {
+            if (score1 === 0 && score2 === 0) {
+              onNewGame()
+            } else {
+              setShowExitConfirm(true)
+            }
+          }}
+          className="p-2 active:bg-emerald-700 rounded-lg"
+        >
           ⚙️
         </button>
         <div className="flex items-center gap-2">
@@ -455,6 +511,20 @@ function GameScreen({ config, onNewGame }) {
             winner={winner}
             onRematch={rematch}
             onNewGame={onNewGame}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Exit confirmation modal */}
+      <AnimatePresence>
+        {showExitConfirm && (
+          <ExitConfirmModal
+            score1={score1}
+            score2={score2}
+            team1={config.team1}
+            team2={config.team2}
+            onConfirm={onNewGame}
+            onCancel={() => setShowExitConfirm(false)}
           />
         )}
       </AnimatePresence>
