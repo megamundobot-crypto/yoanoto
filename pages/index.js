@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Head from 'next/head'
+import Image from 'next/image'
 
 // Sound effects
 const playSound = (type) => {
@@ -13,12 +14,12 @@ const playSound = (type) => {
     gainNode.connect(audioCtx.destination)
 
     if (type === 'tap') {
-      oscillator.frequency.setValueAtTime(600, audioCtx.currentTime)
-      oscillator.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.08)
-      gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime)
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08)
+      oscillator.frequency.setValueAtTime(800, audioCtx.currentTime)
+      oscillator.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.05)
+      gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime)
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05)
       oscillator.start()
-      oscillator.stop(audioCtx.currentTime + 0.08)
+      oscillator.stop(audioCtx.currentTime + 0.05)
     } else if (type === 'win') {
       [523, 659, 784, 1047].forEach((freq, i) => {
         setTimeout(() => {
@@ -28,28 +29,26 @@ const playSound = (type) => {
             o.connect(g)
             g.connect(audioCtx.destination)
             o.frequency.value = freq
-            g.gain.setValueAtTime(0.15, audioCtx.currentTime)
-            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2)
+            g.gain.setValueAtTime(0.12, audioCtx.currentTime)
+            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15)
             o.start()
-            o.stop(audioCtx.currentTime + 0.2)
+            o.stop(audioCtx.currentTime + 0.15)
           } catch(e) {}
-        }, i * 150)
+        }, i * 120)
       })
     }
   } catch (e) {}
 }
 
-// Tally square component - 5 strokes form a square with diagonal
+// Tally square SVG - 5 strokes form a square with diagonal
 function TallySquare({ count, color }) {
-  const size = 50
-  const sw = 4
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="inline-block mx-0.5">
-      {count >= 1 && <line x1={sw} y1={4} x2={sw} y2={size-4} stroke={color} strokeWidth={sw} strokeLinecap="round" />}
-      {count >= 2 && <line x1={4} y1={sw} x2={size-4} y2={sw} stroke={color} strokeWidth={sw} strokeLinecap="round" />}
-      {count >= 3 && <line x1={size-sw} y1={4} x2={size-sw} y2={size-4} stroke={color} strokeWidth={sw} strokeLinecap="round" />}
-      {count >= 4 && <line x1={4} y1={size-sw} x2={size-4} y2={size-sw} stroke={color} strokeWidth={sw} strokeLinecap="round" />}
-      {count >= 5 && <line x1={4} y1={size-4} x2={size-4} y2={4} stroke={color} strokeWidth={sw} strokeLinecap="round" />}
+    <svg width="44" height="44" viewBox="0 0 44 44" className="inline-block">
+      {count >= 1 && <line x1="4" y1="4" x2="4" y2="40" stroke={color} strokeWidth="4" strokeLinecap="round" />}
+      {count >= 2 && <line x1="4" y1="4" x2="40" y2="4" stroke={color} strokeWidth="4" strokeLinecap="round" />}
+      {count >= 3 && <line x1="40" y1="4" x2="40" y2="40" stroke={color} strokeWidth="4" strokeLinecap="round" />}
+      {count >= 4 && <line x1="4" y1="40" x2="40" y2="40" stroke={color} strokeWidth="4" strokeLinecap="round" />}
+      {count >= 5 && <line x1="4" y1="40" x2="40" y2="4" stroke={color} strokeWidth="4" strokeLinecap="round" />}
     </svg>
   )
 }
@@ -59,18 +58,19 @@ function TallyDisplay({ score, color }) {
   const fullGroups = Math.floor(score / 5)
   const remainder = score % 5
 
+  if (score === 0) return <div className="text-gray-300 text-3xl">—</div>
+
   return (
-    <div className="flex flex-wrap justify-center items-center gap-1 min-h-[60px]">
+    <div className="flex flex-wrap justify-center items-center gap-0.5">
       {[...Array(fullGroups)].map((_, i) => (
         <TallySquare key={i} count={5} color={color} />
       ))}
       {remainder > 0 && <TallySquare count={remainder} color={color} />}
-      {score === 0 && <span className="text-gray-300 text-4xl">—</span>}
     </div>
   )
 }
 
-// Config screen - Redesigned
+// Config screen
 function ConfigScreen({ onStart }) {
   const [team1, setTeam1] = useState('Nosotros')
   const [team2, setTeam2] = useState('Ellos')
@@ -80,97 +80,110 @@ function ConfigScreen({ onStart }) {
   const pointOptions = [6, 9, 12, 18, 24, 30]
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-800 to-green-900 flex flex-col p-4 overflow-auto">
+    <div className="min-h-screen bg-gradient-to-b from-emerald-800 via-emerald-900 to-black flex flex-col">
       <Head>
         <title>YoAnoto - Anotador de Truco</title>
-        <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <div className="w-full max-w-sm mx-auto flex-1 flex flex-col justify-center py-4">
-        {/* Logo */}
-        <div className="text-center mb-6">
-          <div className="text-7xl mb-2">🎴</div>
-          <h1 className="text-4xl font-black text-white tracking-tight">
-            YoAnoto
-          </h1>
-          <p className="text-green-300 text-sm mt-1">Anotador de Truco</p>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-xl p-4 space-y-4">
-          {/* Teams */}
-          <div>
-            <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">
-              Equipos
-            </label>
-            <div className="flex gap-2 items-center">
-              <input
-                type="text"
-                value={team1}
-                onChange={(e) => setTeam1(e.target.value)}
-                className="flex-1 min-w-0 p-3 bg-blue-50 border-2 border-blue-200 rounded-xl text-center font-bold text-blue-800 focus:border-blue-500 focus:outline-none"
-                maxLength={10}
-              />
-              <span className="text-xl flex-shrink-0">⚡</span>
-              <input
-                type="text"
-                value={team2}
-                onChange={(e) => setTeam2(e.target.value)}
-                className="flex-1 min-w-0 p-3 bg-orange-50 border-2 border-orange-200 rounded-xl text-center font-bold text-orange-800 focus:border-orange-500 focus:outline-none"
-                maxLength={10}
-              />
-            </div>
-          </div>
-
-          {/* Points */}
-          <div>
-            <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">
-              Puntos
-            </label>
-            <div className="grid grid-cols-6 gap-1.5">
-              {pointOptions.map((pts) => (
-                <button
-                  key={pts}
-                  onClick={() => setMaxPoints(pts)}
-                  className={`py-3 rounded-lg font-bold text-lg transition-all ${
-                    maxPoints === pts
-                      ? 'bg-green-600 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-600 active:bg-gray-200'
-                  }`}
-                >
-                  {pts}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Falta Envido */}
-          <div>
-            <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">
-              Falta Envido
-            </label>
-            <div className="flex gap-2">
-              {[1, 2].map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setFaltaEnvido(n)}
-                  className={`flex-1 py-3 rounded-lg font-bold text-lg transition-all ${
-                    faltaEnvido === n
-                      ? 'bg-red-600 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-600 active:bg-gray-200'
-                  }`}
-                >
-                  {n} Falta{n > 1 ? 's' : ''}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <button
-            onClick={() => onStart({ team1, team2, maxPoints, faltaEnvido })}
-            className="w-full py-4 bg-green-600 active:bg-green-700 text-white rounded-xl font-black text-xl shadow-lg transition-all active:scale-98"
+      <div className="flex-1 flex flex-col justify-center p-4">
+        <div className="w-full max-w-sm mx-auto">
+          {/* Logo con imagen */}
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="text-center mb-5"
           >
-            ¡JUGAR! 🎴
-          </button>
+            <div className="w-20 h-20 mx-auto mb-3 rounded-2xl overflow-hidden shadow-2xl border-2 border-yellow-400">
+              <img src="/icon-192.png" alt="YoAnoto" className="w-full h-full object-cover" />
+            </div>
+            <h1 className="text-3xl font-black text-white tracking-tight drop-shadow-lg">
+              YoAnoto
+            </h1>
+            <p className="text-emerald-300 text-sm">Anotador de Truco Argentino</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white rounded-2xl shadow-2xl p-5 space-y-4 border-t-4 border-yellow-500"
+          >
+            {/* Teams */}
+            <div>
+              <div className="flex gap-2 items-center">
+                <input
+                  type="text"
+                  value={team1}
+                  onChange={(e) => setTeam1(e.target.value)}
+                  className="flex-1 min-w-0 p-3 bg-blue-50 border-2 border-blue-300 rounded-xl text-center font-bold text-blue-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  maxLength={10}
+                  placeholder="Equipo 1"
+                />
+                <div className="w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center shadow-md">
+                  <span className="text-lg font-black text-yellow-900">VS</span>
+                </div>
+                <input
+                  type="text"
+                  value={team2}
+                  onChange={(e) => setTeam2(e.target.value)}
+                  className="flex-1 min-w-0 p-3 bg-orange-50 border-2 border-orange-300 rounded-xl text-center font-bold text-orange-800 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
+                  maxLength={10}
+                  placeholder="Equipo 2"
+                />
+              </div>
+            </div>
+
+            {/* Points */}
+            <div>
+              <label className="text-xs text-gray-500 font-bold uppercase mb-2 block text-center">
+                🎯 Puntos
+              </label>
+              <div className="grid grid-cols-6 gap-1.5">
+                {pointOptions.map((pts) => (
+                  <button
+                    key={pts}
+                    onClick={() => setMaxPoints(pts)}
+                    className={`py-3 rounded-xl font-black text-lg transition-all ${
+                      maxPoints === pts
+                        ? 'bg-emerald-600 text-white shadow-lg scale-105'
+                        : 'bg-gray-100 text-gray-500 active:bg-gray-200'
+                    }`}
+                  >
+                    {pts}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Falta Envido */}
+            <div>
+              <label className="text-xs text-gray-500 font-bold uppercase mb-2 block text-center">
+                🃏 Falta Envido
+              </label>
+              <div className="flex gap-2">
+                {[1, 2].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setFaltaEnvido(n)}
+                    className={`flex-1 py-3 rounded-xl font-bold text-lg transition-all ${
+                      faltaEnvido === n
+                        ? 'bg-red-500 text-white shadow-lg'
+                        : 'bg-gray-100 text-gray-500 active:bg-gray-200'
+                    }`}
+                  >
+                    {n} Falta{n > 1 ? 's' : ''}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={() => onStart({ team1, team2, maxPoints, faltaEnvido })}
+              className="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-xl font-black text-xl shadow-xl active:scale-98 transition-transform"
+            >
+              ¡JUGAR!
+            </button>
+          </motion.div>
         </div>
       </div>
     </div>
@@ -187,25 +200,25 @@ function WinnerModal({ winner, onRematch, onNewGame }) {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
     >
       <motion.div
-        initial={{ scale: 0.5, rotate: -10 }}
+        initial={{ scale: 0.5, rotate: -5 }}
         animate={{ scale: 1, rotate: 0 }}
-        className="bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-3xl p-8 text-center w-full max-w-sm shadow-2xl"
+        className="bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-500 rounded-3xl p-6 text-center w-full max-w-xs shadow-2xl border-4 border-yellow-300"
       >
-        <div className="text-8xl mb-4">🏆</div>
-        <h2 className="text-2xl font-bold text-yellow-900 mb-2">¡GANADOR!</h2>
-        <h3 className="text-4xl font-black text-white mb-8 drop-shadow-lg">{winner}</h3>
+        <div className="text-7xl mb-3">🏆</div>
+        <h2 className="text-xl font-bold text-yellow-900">¡GANADOR!</h2>
+        <h3 className="text-3xl font-black text-white mb-6 drop-shadow-lg">{winner}</h3>
         <button
           onClick={onRematch}
-          className="w-full py-4 bg-white text-green-700 rounded-2xl font-bold text-xl mb-3 shadow-lg hover:bg-gray-100 transition-all"
+          className="w-full py-3 bg-white text-emerald-700 rounded-xl font-bold text-lg mb-2 shadow-lg active:scale-95 transition-all"
         >
           🔄 Revancha
         </button>
         <button
           onClick={onNewGame}
-          className="w-full py-3 bg-yellow-600 text-white rounded-xl font-semibold hover:bg-yellow-700 transition-all"
+          className="w-full py-2 text-yellow-100 font-semibold active:text-white"
         >
           Nueva Partida
         </button>
@@ -214,65 +227,13 @@ function WinnerModal({ winner, onRematch, onNewGame }) {
   )
 }
 
-// Score Panel - tappable area for each team
-function ScorePanel({ team, score, phase, color, bgColor, onTap, maxPoints }) {
-  const lastTapRef = useRef(0)
-  const halfPoints = maxPoints / 2
-  const displayScore = phase === 'buenas' ? score - halfPoints : score
-
-  const handleTap = (e) => {
-    e.preventDefault()
-    const now = Date.now()
-    if (now - lastTapRef.current < 250) return
-    lastTapRef.current = now
-    playSound('tap')
-    if (navigator.vibrate) navigator.vibrate(30)
-    onTap()
-  }
-
-  return (
-    <motion.div
-      whileTap={{ scale: 0.98 }}
-      onClick={handleTap}
-      onTouchStart={handleTap}
-      className={`flex-1 flex flex-col items-center justify-center p-4 cursor-pointer select-none transition-colors ${bgColor}`}
-      style={{ touchAction: 'manipulation' }}
-    >
-      {/* Team name */}
-      <div className={`font-bold text-lg ${color} mb-1`}>{team}</div>
-
-      {/* Phase indicator */}
-      <div className={`text-xs font-bold px-3 py-1 rounded-full mb-3 ${
-        phase === 'buenas'
-          ? 'bg-green-500 text-white'
-          : 'bg-red-500 text-white'
-      }`}>
-        {phase === 'buenas' ? '✓ BUENAS' : '✗ MALAS'}
-      </div>
-
-      {/* BIG Score */}
-      <div className={`text-8xl font-black ${color} leading-none mb-2`}>
-        {score}
-      </div>
-
-      {/* Tally marks */}
-      <TallyDisplay
-        score={displayScore}
-        color={phase === 'buenas' ? '#059669' : '#1e3a8a'}
-      />
-
-      {/* Tap hint */}
-      <div className="text-gray-400 text-xs mt-3">👆 Tocá para +1</div>
-    </motion.div>
-  )
-}
-
-// Game screen
+// Game screen - FIXED LAYOUT with always visible buttons
 function GameScreen({ config, onNewGame }) {
   const [score1, setScore1] = useState(0)
   const [score2, setScore2] = useState(0)
   const [history, setHistory] = useState([])
   const [winner, setWinner] = useState(null)
+  const lastTapRef = useRef({ team1: 0, team2: 0 })
 
   const halfPoints = config.maxPoints / 2
   const phase1 = score1 >= halfPoints ? 'buenas' : 'malas'
@@ -288,6 +249,8 @@ function GameScreen({ config, onNewGame }) {
 
   const addPoints = useCallback((team, points) => {
     if (winner) return
+    playSound('tap')
+    if (navigator.vibrate) navigator.vibrate(25)
     if (team === 1) {
       setScore1((prev) => Math.min(prev + points, config.maxPoints))
     } else {
@@ -296,7 +259,15 @@ function GameScreen({ config, onNewGame }) {
     setHistory((prev) => [...prev, { team, points }])
   }, [winner, config.maxPoints])
 
-  const getFaltaPoints = (forTeam) => {
+  const handleTap = (team) => {
+    const now = Date.now()
+    const key = team === 1 ? 'team1' : 'team2'
+    if (now - lastTapRef.current[key] < 200) return
+    lastTapRef.current[key] = now
+    addPoints(team, 1)
+  }
+
+  const getFaltaPoints = () => {
     if (config.faltaEnvido === 1) {
       return config.maxPoints - Math.max(score1, score2)
     } else {
@@ -321,114 +292,136 @@ function GameScreen({ config, onNewGame }) {
     setWinner(null)
   }
 
+  const display1 = phase1 === 'buenas' ? score1 - halfPoints : score1
+  const display2 = phase2 === 'buenas' ? score2 - halfPoints : score2
+
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
+    <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
       <Head>
         <title>{score1} - {score2} | YoAnoto</title>
       </Head>
 
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-green-800 text-white shadow-lg">
-        <button onClick={onNewGame} className="text-2xl p-2 hover:bg-green-700 rounded-lg transition-colors">
+      {/* Header - compact */}
+      <div className="flex items-center justify-between px-3 py-2 bg-emerald-800 text-white">
+        <button onClick={onNewGame} className="p-2 active:bg-emerald-700 rounded-lg">
           ⚙️
         </button>
-        <div className="text-center">
-          <span className="font-bold text-lg">🎴 a {config.maxPoints}</span>
-          <span className="text-green-200 text-sm ml-2">({config.faltaEnvido}F)</span>
+        <div className="flex items-center gap-2">
+          <img src="/icon-192.png" alt="" className="w-6 h-6 rounded" />
+          <span className="font-bold">a {config.maxPoints}</span>
         </div>
         <button
           onClick={undo}
           disabled={history.length === 0}
-          className="text-2xl p-2 hover:bg-green-700 rounded-lg transition-colors disabled:opacity-30"
+          className="p-2 active:bg-emerald-700 rounded-lg disabled:opacity-30"
         >
           ↩️
         </button>
       </div>
 
-      {/* Main score area - BIG tappable panels */}
-      <div className="flex-1 flex">
-        <ScorePanel
-          team={config.team1}
-          score={score1}
-          phase={phase1}
-          color="text-blue-700"
-          bgColor={phase1 === 'buenas' ? 'bg-green-50' : 'bg-red-50'}
-          onTap={() => addPoints(1, 1)}
-          maxPoints={config.maxPoints}
-        />
+      {/* Score panels - tappable */}
+      <div className="flex-1 flex min-h-0">
+        {/* Team 1 */}
+        <div
+          onClick={() => handleTap(1)}
+          className={`flex-1 flex flex-col items-center justify-center p-2 cursor-pointer select-none active:opacity-80 transition-all ${
+            phase1 === 'buenas' ? 'bg-gradient-to-b from-green-100 to-green-200' : 'bg-gradient-to-b from-red-50 to-red-100'
+          }`}
+          style={{ touchAction: 'manipulation' }}
+        >
+          <div className="text-blue-800 font-bold text-sm truncate max-w-full">{config.team1}</div>
+          <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 ${
+            phase1 === 'buenas' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+          }`}>
+            {phase1 === 'buenas' ? 'BUENAS' : 'MALAS'}
+          </div>
+          <div className="text-7xl font-black text-blue-800 leading-none my-2">{score1}</div>
+          <TallyDisplay score={display1} color={phase1 === 'buenas' ? '#059669' : '#1e40af'} />
+          <div className="text-gray-400 text-[10px] mt-2">Tocá +1</div>
+        </div>
 
+        {/* Divider */}
         <div className="w-1 bg-gray-400" />
 
-        <ScorePanel
-          team={config.team2}
-          score={score2}
-          phase={phase2}
-          color="text-orange-700"
-          bgColor={phase2 === 'buenas' ? 'bg-green-50' : 'bg-red-50'}
-          onTap={() => addPoints(2, 1)}
-          maxPoints={config.maxPoints}
-        />
+        {/* Team 2 */}
+        <div
+          onClick={() => handleTap(2)}
+          className={`flex-1 flex flex-col items-center justify-center p-2 cursor-pointer select-none active:opacity-80 transition-all ${
+            phase2 === 'buenas' ? 'bg-gradient-to-b from-green-100 to-green-200' : 'bg-gradient-to-b from-red-50 to-red-100'
+          }`}
+          style={{ touchAction: 'manipulation' }}
+        >
+          <div className="text-orange-800 font-bold text-sm truncate max-w-full">{config.team2}</div>
+          <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 ${
+            phase2 === 'buenas' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+          }`}>
+            {phase2 === 'buenas' ? 'BUENAS' : 'MALAS'}
+          </div>
+          <div className="text-7xl font-black text-orange-800 leading-none my-2">{score2}</div>
+          <TallyDisplay score={display2} color={phase2 === 'buenas' ? '#059669' : '#c2410c'} />
+          <div className="text-gray-400 text-[10px] mt-2">Tocá +1</div>
+        </div>
       </div>
 
-      {/* Quick buttons */}
-      <div className="bg-white border-t-2 border-gray-200 p-3">
-        <div className="flex gap-2">
+      {/* Quick buttons - ALWAYS VISIBLE */}
+      <div className="bg-white border-t-2 border-gray-300 p-2 shadow-lg">
+        <div className="flex gap-1.5">
           {/* Team 1 buttons */}
-          <div className="flex-1 flex gap-2">
+          <div className="flex-1 flex gap-1">
             <button
               onClick={() => addPoints(1, 3)}
-              className="flex-1 py-4 bg-blue-600 text-white rounded-xl font-black text-xl shadow-lg active:scale-95 transition-all"
+              className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-black text-lg shadow active:scale-95"
             >
               +3
             </button>
             <button
               onClick={() => addPoints(1, 6)}
-              className="flex-1 py-4 bg-blue-800 text-white rounded-xl font-black text-xl shadow-lg active:scale-95 transition-all"
+              className="flex-1 py-3 bg-blue-800 text-white rounded-lg font-black text-lg shadow active:scale-95"
             >
               +6
             </button>
             <button
               onClick={() => {
-                const pts = getFaltaPoints(1)
+                const pts = getFaltaPoints()
                 if (pts > 0) addPoints(1, pts)
               }}
-              className="py-4 px-3 bg-red-600 text-white rounded-xl font-bold text-sm shadow-lg active:scale-95 transition-all"
+              className="py-3 px-2 bg-red-600 text-white rounded-lg font-bold text-xs shadow active:scale-95"
             >
-              F +{getFaltaPoints(1)}
+              F+{getFaltaPoints()}
             </button>
           </div>
 
           {/* Divider */}
-          <div className="w-1 bg-gray-300 rounded" />
+          <div className="w-0.5 bg-gray-300" />
 
           {/* Team 2 buttons */}
-          <div className="flex-1 flex gap-2">
+          <div className="flex-1 flex gap-1">
             <button
               onClick={() => addPoints(2, 3)}
-              className="flex-1 py-4 bg-orange-600 text-white rounded-xl font-black text-xl shadow-lg active:scale-95 transition-all"
+              className="flex-1 py-3 bg-orange-600 text-white rounded-lg font-black text-lg shadow active:scale-95"
             >
               +3
             </button>
             <button
               onClick={() => addPoints(2, 6)}
-              className="flex-1 py-4 bg-orange-800 text-white rounded-xl font-black text-xl shadow-lg active:scale-95 transition-all"
+              className="flex-1 py-3 bg-orange-800 text-white rounded-lg font-black text-lg shadow active:scale-95"
             >
               +6
             </button>
             <button
               onClick={() => {
-                const pts = getFaltaPoints(2)
+                const pts = getFaltaPoints()
                 if (pts > 0) addPoints(2, pts)
               }}
-              className="py-4 px-3 bg-red-600 text-white rounded-xl font-bold text-sm shadow-lg active:scale-95 transition-all"
+              className="py-3 px-2 bg-red-600 text-white rounded-lg font-bold text-xs shadow active:scale-95"
             >
-              F +{getFaltaPoints(2)}
+              F+{getFaltaPoints()}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Winner */}
+      {/* Winner modal */}
       <AnimatePresence>
         {winner && (
           <WinnerModal
@@ -449,9 +442,9 @@ export default function Home() {
     <>
       <Head>
         <title>YoAnoto - Anotador de Truco</title>
-        <meta name="description" content="Anotador de Truco Argentino" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-        <meta name="theme-color" content="#166534" />
+        <meta name="description" content="Anotador de Truco Argentino - El mejor anotador para tus partidas" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+        <meta name="theme-color" content="#065f46" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <link rel="icon" href="/favicon.ico" />
