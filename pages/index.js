@@ -40,15 +40,15 @@ const playSound = (type) => {
   } catch (e) {}
 }
 
-// Tally square SVG - 5 strokes form a square with diagonal
+// Tally square SVG - 5 strokes form a square with diagonal - BIGGER
 function TallySquare({ count, color }) {
   return (
-    <svg width="36" height="36" viewBox="0 0 36 36" className="inline-block">
-      {count >= 1 && <line x1="3" y1="3" x2="3" y2="33" stroke={color} strokeWidth="3" strokeLinecap="round" />}
-      {count >= 2 && <line x1="3" y1="3" x2="33" y2="3" stroke={color} strokeWidth="3" strokeLinecap="round" />}
-      {count >= 3 && <line x1="33" y1="3" x2="33" y2="33" stroke={color} strokeWidth="3" strokeLinecap="round" />}
-      {count >= 4 && <line x1="3" y1="33" x2="33" y2="33" stroke={color} strokeWidth="3" strokeLinecap="round" />}
-      {count >= 5 && <line x1="3" y1="33" x2="33" y2="3" stroke={color} strokeWidth="3" strokeLinecap="round" />}
+    <svg width="55" height="55" viewBox="0 0 55 55" className="inline-block">
+      {count >= 1 && <line x1="5" y1="5" x2="5" y2="50" stroke={color} strokeWidth="5" strokeLinecap="round" />}
+      {count >= 2 && <line x1="5" y1="5" x2="50" y2="5" stroke={color} strokeWidth="5" strokeLinecap="round" />}
+      {count >= 3 && <line x1="50" y1="5" x2="50" y2="50" stroke={color} strokeWidth="5" strokeLinecap="round" />}
+      {count >= 4 && <line x1="5" y1="50" x2="50" y2="50" stroke={color} strokeWidth="5" strokeLinecap="round" />}
+      {count >= 5 && <line x1="5" y1="50" x2="50" y2="5" stroke={color} strokeWidth="5" strokeLinecap="round" />}
     </svg>
   )
 }
@@ -324,20 +324,19 @@ function GameScreen({ config, onNewGame }) {
         {/* Team 1 */}
         <div
           onClick={() => handleTap(1)}
-          className={`flex-1 flex flex-col items-center justify-center p-2 cursor-pointer select-none active:opacity-80 transition-all ${
+          className={`flex-1 flex flex-col items-center justify-center p-3 cursor-pointer select-none active:opacity-80 transition-all ${
             phase1 === 'buenas' ? 'bg-gradient-to-b from-green-100 to-green-200' : 'bg-gradient-to-b from-red-50 to-red-100'
           }`}
           style={{ touchAction: 'manipulation' }}
         >
-          <div className="text-blue-800 font-bold text-sm truncate max-w-full">{config.team1}</div>
-          <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 ${
+          <div className="text-blue-800 font-black text-2xl truncate max-w-full">{config.team1}</div>
+          <div className={`text-sm font-bold px-3 py-1 rounded-full mt-2 ${
             phase1 === 'buenas' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
           }`}>
             {phase1 === 'buenas' ? 'BUENAS' : 'MALAS'}
           </div>
-          <div className="text-7xl font-black text-blue-800 leading-none my-2">{score1}</div>
+          <div className="text-9xl font-black text-blue-800 leading-none my-3">{score1}</div>
           <TallyDisplay score={display1} color={phase1 === 'buenas' ? '#059669' : '#1e40af'} />
-          <div className="text-gray-400 text-[10px] mt-2">Tocá +1</div>
         </div>
 
         {/* Divider */}
@@ -346,20 +345,19 @@ function GameScreen({ config, onNewGame }) {
         {/* Team 2 */}
         <div
           onClick={() => handleTap(2)}
-          className={`flex-1 flex flex-col items-center justify-center p-2 cursor-pointer select-none active:opacity-80 transition-all ${
+          className={`flex-1 flex flex-col items-center justify-center p-3 cursor-pointer select-none active:opacity-80 transition-all ${
             phase2 === 'buenas' ? 'bg-gradient-to-b from-green-100 to-green-200' : 'bg-gradient-to-b from-red-50 to-red-100'
           }`}
           style={{ touchAction: 'manipulation' }}
         >
-          <div className="text-orange-800 font-bold text-sm truncate max-w-full">{config.team2}</div>
-          <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 ${
+          <div className="text-orange-800 font-black text-2xl truncate max-w-full">{config.team2}</div>
+          <div className={`text-sm font-bold px-3 py-1 rounded-full mt-2 ${
             phase2 === 'buenas' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
           }`}>
             {phase2 === 'buenas' ? 'BUENAS' : 'MALAS'}
           </div>
-          <div className="text-7xl font-black text-orange-800 leading-none my-2">{score2}</div>
+          <div className="text-9xl font-black text-orange-800 leading-none my-3">{score2}</div>
           <TallyDisplay score={display2} color={phase2 === 'buenas' ? '#059669' : '#c2410c'} />
-          <div className="text-gray-400 text-[10px] mt-2">Tocá +1</div>
         </div>
       </div>
 
