@@ -43,25 +43,25 @@ const playSound = (type) => {
 // Tally square SVG - 5 strokes form a square with diagonal
 function TallySquare({ count, color }) {
   return (
-    <svg width="44" height="44" viewBox="0 0 44 44" className="inline-block">
-      {count >= 1 && <line x1="4" y1="4" x2="4" y2="40" stroke={color} strokeWidth="4" strokeLinecap="round" />}
-      {count >= 2 && <line x1="4" y1="4" x2="40" y2="4" stroke={color} strokeWidth="4" strokeLinecap="round" />}
-      {count >= 3 && <line x1="40" y1="4" x2="40" y2="40" stroke={color} strokeWidth="4" strokeLinecap="round" />}
-      {count >= 4 && <line x1="4" y1="40" x2="40" y2="40" stroke={color} strokeWidth="4" strokeLinecap="round" />}
-      {count >= 5 && <line x1="4" y1="40" x2="40" y2="4" stroke={color} strokeWidth="4" strokeLinecap="round" />}
+    <svg width="36" height="36" viewBox="0 0 36 36" className="inline-block">
+      {count >= 1 && <line x1="3" y1="3" x2="3" y2="33" stroke={color} strokeWidth="3" strokeLinecap="round" />}
+      {count >= 2 && <line x1="3" y1="3" x2="33" y2="3" stroke={color} strokeWidth="3" strokeLinecap="round" />}
+      {count >= 3 && <line x1="33" y1="3" x2="33" y2="33" stroke={color} strokeWidth="3" strokeLinecap="round" />}
+      {count >= 4 && <line x1="3" y1="33" x2="33" y2="33" stroke={color} strokeWidth="3" strokeLinecap="round" />}
+      {count >= 5 && <line x1="3" y1="33" x2="33" y2="3" stroke={color} strokeWidth="3" strokeLinecap="round" />}
     </svg>
   )
 }
 
-// Score tally display
+// Score tally display - VERTICAL layout (one below another)
 function TallyDisplay({ score, color }) {
   const fullGroups = Math.floor(score / 5)
   const remainder = score % 5
 
-  if (score === 0) return <div className="text-gray-300 text-3xl">—</div>
+  if (score === 0) return <div className="text-gray-300 text-2xl">—</div>
 
   return (
-    <div className="flex flex-wrap justify-center items-center gap-0.5">
+    <div className="flex flex-col items-center gap-0">
       {[...Array(fullGroups)].map((_, i) => (
         <TallySquare key={i} count={5} color={color} />
       ))}
@@ -365,29 +365,27 @@ function GameScreen({ config, onNewGame }) {
 
       {/* Quick buttons - ALWAYS VISIBLE */}
       <div className="bg-white border-t-2 border-gray-300 p-2 shadow-lg">
-        <div className="flex gap-1.5">
+        {/* Row 1: +3 +4 +6 buttons */}
+        <div className="flex gap-1.5 mb-1.5">
           {/* Team 1 buttons */}
           <div className="flex-1 flex gap-1">
             <button
               onClick={() => addPoints(1, 3)}
-              className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-black text-lg shadow active:scale-95"
+              className="flex-1 py-2.5 bg-blue-500 text-white rounded-lg font-black text-lg shadow active:scale-95"
             >
               +3
             </button>
             <button
-              onClick={() => addPoints(1, 6)}
-              className="flex-1 py-3 bg-blue-800 text-white rounded-lg font-black text-lg shadow active:scale-95"
+              onClick={() => addPoints(1, 4)}
+              className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg font-black text-lg shadow active:scale-95"
             >
-              +6
+              +4
             </button>
             <button
-              onClick={() => {
-                const pts = getFaltaPoints()
-                if (pts > 0) addPoints(1, pts)
-              }}
-              className="py-3 px-2 bg-red-600 text-white rounded-lg font-bold text-xs shadow active:scale-95"
+              onClick={() => addPoints(1, 6)}
+              className="flex-1 py-2.5 bg-blue-700 text-white rounded-lg font-black text-lg shadow active:scale-95"
             >
-              F+{getFaltaPoints()}
+              +6
             </button>
           </div>
 
@@ -398,26 +396,48 @@ function GameScreen({ config, onNewGame }) {
           <div className="flex-1 flex gap-1">
             <button
               onClick={() => addPoints(2, 3)}
-              className="flex-1 py-3 bg-orange-600 text-white rounded-lg font-black text-lg shadow active:scale-95"
+              className="flex-1 py-2.5 bg-orange-500 text-white rounded-lg font-black text-lg shadow active:scale-95"
             >
               +3
             </button>
             <button
+              onClick={() => addPoints(2, 4)}
+              className="flex-1 py-2.5 bg-orange-600 text-white rounded-lg font-black text-lg shadow active:scale-95"
+            >
+              +4
+            </button>
+            <button
               onClick={() => addPoints(2, 6)}
-              className="flex-1 py-3 bg-orange-800 text-white rounded-lg font-black text-lg shadow active:scale-95"
+              className="flex-1 py-2.5 bg-orange-700 text-white rounded-lg font-black text-lg shadow active:scale-95"
             >
               +6
             </button>
-            <button
-              onClick={() => {
-                const pts = getFaltaPoints()
-                if (pts > 0) addPoints(2, pts)
-              }}
-              className="py-3 px-2 bg-red-600 text-white rounded-lg font-bold text-xs shadow active:scale-95"
-            >
-              F+{getFaltaPoints()}
-            </button>
           </div>
+        </div>
+
+        {/* Row 2: Falta buttons - wider */}
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => {
+              const pts = getFaltaPoints()
+              if (pts > 0) addPoints(1, pts)
+            }}
+            className="flex-1 py-3 bg-red-600 text-white rounded-lg font-bold text-base shadow active:scale-95"
+          >
+            FALTA +{getFaltaPoints()}
+          </button>
+
+          <div className="w-0.5 bg-gray-300" />
+
+          <button
+            onClick={() => {
+              const pts = getFaltaPoints()
+              if (pts > 0) addPoints(2, pts)
+            }}
+            className="flex-1 py-3 bg-red-600 text-white rounded-lg font-bold text-base shadow active:scale-95"
+          >
+            FALTA +{getFaltaPoints()}
+          </button>
         </div>
       </div>
 
