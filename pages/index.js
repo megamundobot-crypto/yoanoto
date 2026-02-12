@@ -206,6 +206,16 @@ function ConfigScreen({ onStart }) {
             >
               ¡JUGAR!
             </button>
+
+            {/* Reglamento button */}
+            <a
+              href="https://drive.google.com/file/d/168wgaIPHUZet9ljRpRlQXOFo-qWju52W/view"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-3 bg-amber-100 text-amber-800 rounded-xl font-bold text-base shadow border-2 border-amber-300 flex items-center justify-center gap-2 active:scale-98 transition-transform"
+            >
+              📜 Ver Reglamento
+            </a>
           </motion.div>
 
           {/* Credits */}
