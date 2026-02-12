@@ -207,6 +207,18 @@ function ConfigScreen({ onStart }) {
               ¡JUGAR!
             </button>
           </motion.div>
+
+          {/* Credits */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-center mt-4"
+          >
+            <p className="text-emerald-400/60 text-xs font-mono">
+              {'<'}<span className="text-yellow-400/80">dev</span>{'>'} <span className="text-white/70">GaLiSe</span> {'</'}<span className="text-yellow-400/80">dev</span>{'>'}
+            </p>
+          </motion.div>
         </div>
       </div>
     </div>
