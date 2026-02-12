@@ -1,5 +1,6 @@
 import '../styles/globals.css'
 import Head from 'next/head'
+import { Analytics } from '@vercel/analytics/react'
 
 function MyApp({ Component, pageProps }) {
   return (
@@ -14,6 +15,7 @@ function MyApp({ Component, pageProps }) {
         <meta name="description" content="El mejor anotador de truco argentino. Anotá tus partidas con chapitas de cerveza, configurá puntos, flor y falta envido." />
       </Head>
       <Component {...pageProps} />
+      <Analytics />
     </>
   )
 }
