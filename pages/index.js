@@ -117,15 +117,18 @@ function ConfigScreen({ onStart }) {
                 <label className="text-xs text-gray-500 font-bold uppercase mb-1 block">
                   🔵 Equipo 1
                 </label>
-                <input
-                  type="text"
-                  value={team1}
-                  onChange={(e) => setTeam1(e.target.value)}
-                  onFocus={(e) => e.target.select()}
-                  className="w-full p-4 bg-blue-50 border-2 border-blue-300 rounded-xl text-center font-black text-xl text-blue-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                  maxLength={12}
-                  placeholder="Ej: Nosotros"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={team1}
+                    onChange={(e) => setTeam1(e.target.value)}
+                    onFocus={(e) => e.target.select()}
+                    className="w-full p-4 pr-12 bg-blue-50 border-2 border-blue-300 rounded-xl text-center font-black text-xl text-blue-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    maxLength={12}
+                    placeholder="Ej: Nosotros"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-blue-400 text-xl pointer-events-none">✏️</span>
+                </div>
               </div>
 
               <div className="flex justify-center">
@@ -138,15 +141,18 @@ function ConfigScreen({ onStart }) {
                 <label className="text-xs text-gray-500 font-bold uppercase mb-1 block">
                   🟠 Equipo 2
                 </label>
-                <input
-                  type="text"
-                  value={team2}
-                  onChange={(e) => setTeam2(e.target.value)}
-                  onFocus={(e) => e.target.select()}
-                  className="w-full p-4 bg-orange-50 border-2 border-orange-300 rounded-xl text-center font-black text-xl text-orange-800 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
-                  maxLength={12}
-                  placeholder="Ej: Ellos"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={team2}
+                    onChange={(e) => setTeam2(e.target.value)}
+                    onFocus={(e) => e.target.select()}
+                    className="w-full p-4 pr-12 bg-orange-50 border-2 border-orange-300 rounded-xl text-center font-black text-xl text-orange-800 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
+                    maxLength={12}
+                    placeholder="Ej: Ellos"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-orange-400 text-xl pointer-events-none">✏️</span>
+                </div>
               </div>
             </div>
 
