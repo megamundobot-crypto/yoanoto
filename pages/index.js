@@ -111,27 +111,41 @@ function ConfigScreen({ onStart }) {
             transition={{ delay: 0.1 }}
             className="bg-white rounded-2xl shadow-2xl p-5 space-y-4 border-t-4 border-yellow-500"
           >
-            {/* Teams */}
-            <div>
-              <div className="flex gap-2 items-center">
+            {/* Teams - stacked for easier editing */}
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-gray-500 font-bold uppercase mb-1 block">
+                  🔵 Equipo 1
+                </label>
                 <input
                   type="text"
                   value={team1}
                   onChange={(e) => setTeam1(e.target.value)}
-                  className="flex-1 min-w-0 p-3 bg-blue-50 border-2 border-blue-300 rounded-xl text-center font-bold text-blue-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                  maxLength={10}
-                  placeholder="Equipo 1"
+                  onFocus={(e) => e.target.select()}
+                  className="w-full p-4 bg-blue-50 border-2 border-blue-300 rounded-xl text-center font-black text-xl text-blue-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  maxLength={12}
+                  placeholder="Ej: Nosotros"
                 />
-                <div className="w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center shadow-md">
-                  <span className="text-lg font-black text-yellow-900">VS</span>
+              </div>
+
+              <div className="flex justify-center">
+                <div className="w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg">
+                  <span className="text-xl font-black text-yellow-900">VS</span>
                 </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-500 font-bold uppercase mb-1 block">
+                  🟠 Equipo 2
+                </label>
                 <input
                   type="text"
                   value={team2}
                   onChange={(e) => setTeam2(e.target.value)}
-                  className="flex-1 min-w-0 p-3 bg-orange-50 border-2 border-orange-300 rounded-xl text-center font-bold text-orange-800 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
-                  maxLength={10}
-                  placeholder="Equipo 2"
+                  onFocus={(e) => e.target.select()}
+                  className="w-full p-4 bg-orange-50 border-2 border-orange-300 rounded-xl text-center font-black text-xl text-orange-800 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
+                  maxLength={12}
+                  placeholder="Ej: Ellos"
                 />
               </div>
             </div>
@@ -391,13 +405,13 @@ function GameScreen({ config, onNewGame }) {
           }`}
           style={{ touchAction: 'manipulation' }}
         >
-          <div className="text-blue-800 font-black text-2xl truncate max-w-full">{config.team1}</div>
-          <div className={`text-sm font-bold px-3 py-1 rounded-full mt-2 ${
+          <div className="text-blue-800 font-black text-3xl truncate max-w-full px-1">{config.team1}</div>
+          <div className={`text-sm font-bold px-3 py-1 rounded-full mt-1 ${
             phase1 === 'buenas' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
           }`}>
             {phase1 === 'buenas' ? 'BUENAS' : 'MALAS'}
           </div>
-          <div className="text-9xl font-black text-blue-800 leading-none my-3">{score1}</div>
+          <div className="text-9xl font-black text-blue-800 leading-none my-2">{display1}</div>
           <TallyDisplay score={display1} color={phase1 === 'buenas' ? '#059669' : '#1e40af'} />
         </div>
 
@@ -412,13 +426,13 @@ function GameScreen({ config, onNewGame }) {
           }`}
           style={{ touchAction: 'manipulation' }}
         >
-          <div className="text-orange-800 font-black text-2xl truncate max-w-full">{config.team2}</div>
-          <div className={`text-sm font-bold px-3 py-1 rounded-full mt-2 ${
+          <div className="text-orange-800 font-black text-3xl truncate max-w-full px-1">{config.team2}</div>
+          <div className={`text-sm font-bold px-3 py-1 rounded-full mt-1 ${
             phase2 === 'buenas' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
           }`}>
             {phase2 === 'buenas' ? 'BUENAS' : 'MALAS'}
           </div>
-          <div className="text-9xl font-black text-orange-800 leading-none my-3">{score2}</div>
+          <div className="text-9xl font-black text-orange-800 leading-none my-2">{display2}</div>
           <TallyDisplay score={display2} color={phase2 === 'buenas' ? '#059669' : '#c2410c'} />
         </div>
       </div>
