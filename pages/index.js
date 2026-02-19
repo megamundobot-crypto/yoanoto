@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Head from 'next/head'
-import Image from 'next/image'
+import dynamic from 'next/dynamic'
+
+const ExpenseSplitter = dynamic(() => import('../components/ExpenseSplitter'), { ssr: false })
 
 // Sound effects
 const playSound = (type) => {
@@ -70,8 +72,84 @@ function TallyDisplay({ score, color }) {
   )
 }
 
-// Config screen
-function ConfigScreen({ onStart }) {
+// Main Menu
+function MainMenu({ onTruco, onGastos }) {
+  return (
+    <div
+      className="min-h-screen bg-gradient-to-b from-emerald-800 via-emerald-900 to-black flex flex-col"
+      style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+    >
+      <Head>
+        <title>YoAnoto - Anotador de Truco</title>
+      </Head>
+
+      <div className="flex-1 flex flex-col justify-center p-4">
+        <div className="w-full max-w-sm mx-auto">
+          {/* Logo */}
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="text-center mb-6"
+          >
+            <div className="w-24 h-24 mx-auto mb-3 rounded-2xl overflow-hidden shadow-2xl border-2 border-yellow-400">
+              <img src="/icon-192.png" alt="YoAnoto" className="w-full h-full object-cover" />
+            </div>
+            <h1 className="text-4xl font-black text-white tracking-tight drop-shadow-lg">
+              YoAnoto
+            </h1>
+            <p className="text-emerald-300 text-sm">Anotador de Truco QUITILIPIENSE</p>
+          </motion.div>
+
+          {/* Main buttons */}
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="space-y-3"
+          >
+            <button
+              onClick={onTruco}
+              className="w-full py-6 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-2xl font-black text-2xl shadow-xl active:scale-98 transition-transform border-2 border-emerald-400 flex items-center justify-center gap-3"
+            >
+              🃏 Anotar Truco
+            </button>
+
+            <button
+              onClick={onGastos}
+              className="w-full py-6 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl font-black text-2xl shadow-xl active:scale-98 transition-transform border-2 border-amber-400 flex items-center justify-center gap-3"
+            >
+              💰 Dividir Gastos
+            </button>
+
+            <a
+              href="https://drive.google.com/file/d/168wgaIPHUZet9ljRpRlQXOFo-qWju52W/view"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-3 bg-white/10 text-white rounded-xl font-bold text-base flex items-center justify-center gap-2 active:bg-white/20 transition-all"
+            >
+              📜 Ver Reglamento
+            </a>
+          </motion.div>
+
+          {/* Credits */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-center mt-6"
+          >
+            <p className="text-emerald-400/60 text-xs font-mono">
+              {'<'}<span className="text-yellow-400/80">dev</span>{'>'} <span className="text-white/70">GaLiSe</span> {'</'}<span className="text-yellow-400/80">dev</span>{'>'}
+            </p>
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Truco Config screen
+function ConfigScreen({ onStart, onBack }) {
   const [team1, setTeam1] = useState('Nosotros')
   const [team2, setTeam2] = useState('Ellos')
   const [maxPoints, setMaxPoints] = useState(30)
@@ -85,30 +163,24 @@ function ConfigScreen({ onStart }) {
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <Head>
-        <title>YoAnoto - Anotador de Truco</title>
+        <title>YoAnoto - Configurar Partida</title>
       </Head>
 
       <div className="flex-1 flex flex-col justify-center p-4">
         <div className="w-full max-w-sm mx-auto">
-          {/* Logo con imagen */}
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="text-center mb-5"
-          >
-            <div className="w-20 h-20 mx-auto mb-3 rounded-2xl overflow-hidden shadow-2xl border-2 border-yellow-400">
-              <img src="/icon-192.png" alt="YoAnoto" className="w-full h-full object-cover" />
-            </div>
-            <h1 className="text-3xl font-black text-white tracking-tight drop-shadow-lg">
-              YoAnoto
-            </h1>
-            <p className="text-emerald-300 text-sm">Anotador de Truco QUITILIPIENSE</p>
-          </motion.div>
+          {/* Back + Title */}
+          <div className="flex items-center mb-4">
+            <button
+              onClick={onBack}
+              className="text-white font-bold text-lg active:text-emerald-300 p-2"
+            >
+              ← Menú
+            </button>
+          </div>
 
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.1 }}
             className="bg-white rounded-2xl shadow-2xl p-5 space-y-4 border-t-4 border-yellow-500"
           >
             {/* Teams - stacked for easier editing */}
@@ -206,28 +278,6 @@ function ConfigScreen({ onStart }) {
             >
               ¡JUGAR!
             </button>
-
-            {/* Reglamento button */}
-            <a
-              href="https://drive.google.com/file/d/168wgaIPHUZet9ljRpRlQXOFo-qWju52W/view"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full py-3 bg-amber-100 text-amber-800 rounded-xl font-bold text-base shadow border-2 border-amber-300 flex items-center justify-center gap-2 active:scale-98 transition-transform"
-            >
-              📜 Ver Reglamento
-            </a>
-          </motion.div>
-
-          {/* Credits */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="text-center mt-4"
-          >
-            <p className="text-emerald-400/60 text-xs font-mono">
-              {'<'}<span className="text-yellow-400/80">dev</span>{'>'} <span className="text-white/70">GaLiSe</span> {'</'}<span className="text-yellow-400/80">dev</span>{'>'}
-            </p>
           </motion.div>
         </div>
       </div>
@@ -604,7 +654,14 @@ function GameScreen({ config, onNewGame }) {
 }
 
 export default function Home() {
-  const [config, setConfig] = useState(null)
+  // screen: 'menu' | 'truco-config' | 'truco-game' | 'gastos'
+  const [screen, setScreen] = useState('menu')
+  const [gameConfig, setGameConfig] = useState(null)
+
+  const startGame = (config) => {
+    setGameConfig(config)
+    setScreen('truco-game')
+  }
 
   return (
     <>
@@ -620,10 +677,35 @@ export default function Home() {
         <link rel="manifest" href="/manifest.json" />
       </Head>
       <AnimatePresence mode="wait">
-        {config ? (
-          <GameScreen key="game" config={config} onNewGame={() => setConfig(null)} />
-        ) : (
-          <ConfigScreen key="config" onStart={setConfig} />
+        {screen === 'menu' && (
+          <MainMenu
+            key="menu"
+            onTruco={() => setScreen('truco-config')}
+            onGastos={() => setScreen('gastos')}
+          />
+        )}
+        {screen === 'truco-config' && (
+          <ConfigScreen
+            key="config"
+            onStart={startGame}
+            onBack={() => setScreen('menu')}
+          />
+        )}
+        {screen === 'truco-game' && gameConfig && (
+          <GameScreen
+            key="game"
+            config={gameConfig}
+            onNewGame={() => {
+              setGameConfig(null)
+              setScreen('truco-config')
+            }}
+          />
+        )}
+        {screen === 'gastos' && (
+          <ExpenseSplitter
+            key="gastos"
+            onBack={() => setScreen('menu')}
+          />
         )}
       </AnimatePresence>
     </>
