@@ -1,6 +1,19 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
+// Format number as Argentine pesos: 1234567 -> 1.234.567
+function formatPesos(num) {
+  if (!num && num !== 0) return ''
+  return num.toLocaleString('es-AR')
+}
+
+// Parse formatted peso string back to number: "1.234.567" -> 1234567
+function parsePesos(str) {
+  const cleaned = str.replace(/\./g, '').replace(/,/g, '.')
+  const num = parseFloat(cleaned)
+  return isNaN(num) ? 0 : num
+}
+
 const CATEGORIES = [
   { id: 'carne', label: '🥩 Carne', icon: '🥩' },
   { id: 'bebidas', label: '🍺 Bebidas', icon: '🍺' },
@@ -205,15 +218,30 @@ function StepExpenses({ participants, expenses, setExpenses, onNext, onBack }) {
   const [paidBy, setPaidBy] = useState('')
   const [category, setCategory] = useState('')
   const [customCategory, setCustomCategory] = useState('')
-  const [amount, setAmount] = useState('')
+  const [amountRaw, setAmountRaw] = useState('')
+  const [amountDisplay, setAmountDisplay] = useState('')
   const [splitType, setSplitType] = useState('all')
   const [splitBetween, setSplitBetween] = useState([])
+
+  const handleAmountChange = (e) => {
+    // Only allow digits
+    const digits = e.target.value.replace(/[^\d]/g, '')
+    if (digits === '') {
+      setAmountRaw('')
+      setAmountDisplay('')
+      return
+    }
+    const num = parseInt(digits, 10)
+    setAmountRaw(num)
+    setAmountDisplay(formatPesos(num))
+  }
 
   const resetForm = () => {
     setPaidBy('')
     setCategory('')
     setCustomCategory('')
-    setAmount('')
+    setAmountRaw('')
+    setAmountDisplay('')
     setSplitType('all')
     setSplitBetween([])
     setShowForm(false)
@@ -223,12 +251,12 @@ function StepExpenses({ participants, expenses, setExpenses, onNext, onBack }) {
     const catLabel = category === 'otro' ? (customCategory || 'Otro') : CATEGORIES.find(c => c.id === category)?.label || category
     const split = splitType === 'all' ? [...participants] : splitBetween
 
-    if (paidBy && category && amount && split.length > 0) {
+    if (paidBy && category && amountRaw && split.length > 0) {
       setExpenses([...expenses, {
         id: Date.now(),
         paidBy,
         category: catLabel,
-        amount: parseFloat(amount),
+        amount: typeof amountRaw === 'number' ? amountRaw : parseFloat(amountRaw),
         splitBetween: split,
       }])
       resetForm()
@@ -254,7 +282,7 @@ function StepExpenses({ participants, expenses, setExpenses, onNext, onBack }) {
           <div className="text-5xl mb-2">🧾</div>
           <h2 className="text-2xl font-black text-gray-800">Gastos</h2>
           {total > 0 && (
-            <p className="text-emerald-600 font-black text-2xl mt-1">Total: ${total.toLocaleString()}</p>
+            <p className="text-emerald-600 font-black text-2xl mt-1">Total: ${formatPesos(total)}</p>
           )}
         </div>
 
@@ -269,17 +297,22 @@ function StepExpenses({ participants, expenses, setExpenses, onNext, onBack }) {
                 exit={{ opacity: 0, x: -20 }}
                 className="bg-white p-4 rounded-xl shadow border border-gray-200"
               >
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
                     <div className="font-bold text-gray-800 text-lg">{exp.category}</div>
                     <div className="text-base text-gray-500">
                       Pagó <span className="font-bold text-emerald-700">{exp.paidBy}</span>
-                      {' · '}
-                      {exp.splitBetween.length === participants.length ? 'Entre todos' : `Entre ${exp.splitBetween.length}`}
+                    </div>
+                    <div className="text-sm text-blue-600 mt-1">
+                      {exp.splitBetween.length === participants.length
+                        ? '👥 Entre todos'
+                        : `👥 ${exp.splitBetween.join(', ')}`
+                      }
+                      <span className="text-gray-400"> · ${formatPesos(Math.round(exp.amount / exp.splitBetween.length))} c/u</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-black text-xl text-gray-800">${exp.amount.toLocaleString()}</span>
+                  <div className="flex items-center gap-2 ml-2">
+                    <span className="font-black text-xl text-gray-800">${formatPesos(exp.amount)}</span>
                     <button
                       onClick={() => removeExpense(exp.id)}
                       className="w-8 h-8 bg-red-100 text-red-600 rounded-full font-bold flex items-center justify-center"
@@ -354,15 +387,18 @@ function StepExpenses({ participants, expenses, setExpenses, onNext, onBack }) {
 
               {/* Amount */}
               <div>
-                <label className="text-sm text-gray-500 font-bold uppercase block mb-2">Monto $</label>
-                <input
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="w-full p-4 border-2 border-gray-300 rounded-xl text-center font-black text-3xl text-gray-800 focus:border-emerald-500 focus:outline-none"
-                  placeholder="0"
-                  inputMode="numeric"
-                />
+                <label className="text-sm text-gray-500 font-bold uppercase block mb-2">Monto</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-black text-2xl">$</span>
+                  <input
+                    type="text"
+                    value={amountDisplay}
+                    onChange={handleAmountChange}
+                    className="w-full p-4 pl-10 border-2 border-gray-300 rounded-xl text-center font-black text-3xl text-gray-800 focus:border-emerald-500 focus:outline-none"
+                    placeholder="0"
+                    inputMode="numeric"
+                  />
+                </div>
               </div>
 
               {/* Split */}
@@ -415,7 +451,7 @@ function StepExpenses({ participants, expenses, setExpenses, onNext, onBack }) {
                 </button>
                 <button
                   onClick={addExpense}
-                  disabled={!paidBy || !category || !amount || (splitType === 'custom' && splitBetween.length === 0)}
+                  disabled={!paidBy || !category || !amountRaw || (splitType === 'custom' && splitBetween.length === 0)}
                   className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold text-lg shadow active:scale-95 disabled:opacity-40"
                 >
                   Agregar
@@ -466,12 +502,17 @@ function StepSummary({ participants, expenses, aliases, setAliases, onBack }) {
 
     text += '📋 *DETALLE DE GASTOS:*\n\n'
     expenses.forEach(exp => {
+      const splitNames = exp.splitBetween.length === participants.length
+        ? 'Entre todos'
+        : exp.splitBetween.join(', ')
+      const perPers = Math.round(exp.amount / exp.splitBetween.length)
       text += `  ${exp.category}\n`
-      text += `  💲 *$${exp.amount.toLocaleString()}* — Pagó *${exp.paidBy.toUpperCase()}*\n\n`
+      text += `  💲 *$${formatPesos(exp.amount)}* — Pagó *${exp.paidBy.toUpperCase()}*\n`
+      text += `  👥 ${splitNames} ($${formatPesos(perPers)} c/u)\n\n`
     })
 
     text += '━━━━━━━━━━━━━━━━━━━━\n'
-    text += `💵 *TOTAL: $${total.toLocaleString()}*\n`
+    text += `💵 *TOTAL: $${formatPesos(total)}*\n`
     text += `👥 ${participants.length} personas\n`
     text += '━━━━━━━━━━━━━━━━━━━━\n\n'
 
@@ -483,7 +524,7 @@ function StepSummary({ participants, expenses, aliases, setAliases, onBack }) {
         text += `  💸 *${d.from.toUpperCase()}*\n`
         text += `      ➡️  le paga a  ➡️\n`
         text += `  🏦 *${d.to.toUpperCase()}*\n`
-        text += `      💲 *$${d.amount.toLocaleString()}*\n`
+        text += `      💲 *$${formatPesos(d.amount)}*\n`
         if (aliases[d.to]) {
           text += `      📲 Alias: *${aliases[d.to]}*\n`
         }
@@ -505,7 +546,7 @@ function StepSummary({ participants, expenses, aliases, setAliases, onBack }) {
         <div className="text-center">
           <div className="text-5xl mb-2">📊</div>
           <h2 className="text-2xl font-black text-gray-800">Resumen</h2>
-          <p className="text-emerald-600 font-black text-2xl mt-1">Total: ${total.toLocaleString()}</p>
+          <p className="text-emerald-600 font-black text-2xl mt-1">Total: ${formatPesos(total)}</p>
         </div>
 
         {/* Per-person breakdown */}
@@ -518,16 +559,16 @@ function StepSummary({ participants, expenses, aliases, setAliases, onBack }) {
               <span className="font-black text-gray-800 text-lg">{p}</span>
               <div className="text-right">
                 <div className="text-sm text-gray-500">
-                  Pagó ${Math.round(perPerson[p].paid).toLocaleString()} · Le toca ${Math.round(perPerson[p].owes).toLocaleString()}
+                  Pagó ${formatPesos(Math.round(perPerson[p].paid))} · Le toca ${formatPesos(Math.round(perPerson[p].owes))}
                 </div>
                 <div className={`font-black text-base ${
                   perPerson[p].paid - perPerson[p].owes > 0.5 ? 'text-emerald-600' :
                   perPerson[p].paid - perPerson[p].owes < -0.5 ? 'text-red-600' : 'text-gray-500'
                 }`}>
                   {perPerson[p].paid - perPerson[p].owes > 0.5
-                    ? `Le deben $${Math.round(perPerson[p].paid - perPerson[p].owes).toLocaleString()}`
+                    ? `Le deben $${formatPesos(Math.round(perPerson[p].paid - perPerson[p].owes))}`
                     : perPerson[p].paid - perPerson[p].owes < -0.5
-                    ? `Debe $${Math.round(perPerson[p].owes - perPerson[p].paid).toLocaleString()}`
+                    ? `Debe $${formatPesos(Math.round(perPerson[p].owes - perPerson[p].paid))}`
                     : 'Al día ✓'
                   }
                 </div>
@@ -554,7 +595,7 @@ function StepSummary({ participants, expenses, aliases, setAliases, onBack }) {
                     <span className="text-gray-400 text-xl">➡️</span>
                     <span className="font-black text-emerald-600 text-lg">{d.to}</span>
                   </div>
-                  <span className="font-black text-2xl">${d.amount.toLocaleString()}</span>
+                  <span className="font-black text-2xl">${formatPesos(d.amount)}</span>
                 </div>
               </div>
             ))
