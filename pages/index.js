@@ -326,10 +326,39 @@ function GameScreen({ config, onNewGame }) {
   const [winner, setWinner] = useState(null)
   const [showExitConfirm, setShowExitConfirm] = useState(false)
   const lastTapRef = useRef({ team1: 0, team2: 0 })
+  const wakeLockRef = useRef(null)
 
   const halfPoints = config.maxPoints / 2
   const phase1 = score1 >= halfPoints ? 'buenas' : 'malas'
   const phase2 = score2 >= halfPoints ? 'buenas' : 'malas'
+
+  // Wake Lock - mantener pantalla encendida durante el partido
+  useEffect(() => {
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLockRef.current = await navigator.wakeLock.request('screen')
+        }
+      } catch (e) {}
+    }
+    requestWakeLock()
+
+    // Re-activar si el usuario vuelve a la app
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        requestWakeLock()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility)
+      if (wakeLockRef.current) {
+        wakeLockRef.current.release()
+        wakeLockRef.current = null
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (score1 >= config.maxPoints && !winner) {
