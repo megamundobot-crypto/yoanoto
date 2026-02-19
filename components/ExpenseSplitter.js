@@ -49,7 +49,6 @@ function simplifyDebts(participants, expenses) {
     else if (balance < -0.5) debtors.push({ name, amount: -balance })
   })
 
-  // Sort for optimal simplification
   debtors.sort((a, b) => b.amount - a.amount)
   creditors.sort((a, b) => b.amount - a.amount)
 
@@ -118,9 +117,9 @@ function StepParticipants({ participants, setParticipants, onNext }) {
     <div className="flex-1 overflow-y-auto p-4">
       <div className="w-full max-w-sm mx-auto space-y-4">
         <div className="text-center">
-          <div className="text-4xl mb-2">👥</div>
-          <h2 className="text-xl font-black text-gray-800">¿Quiénes participan?</h2>
-          <p className="text-gray-500 text-sm">Agregá a los integrantes de la juntada</p>
+          <div className="text-5xl mb-2">👥</div>
+          <h2 className="text-2xl font-black text-gray-800">¿Quiénes participan?</h2>
+          <p className="text-gray-500 text-base mt-1">Agregá a los integrantes de la juntada</p>
         </div>
 
         {/* Input with autocomplete */}
@@ -132,14 +131,14 @@ function StepParticipants({ participants, setParticipants, onNext }) {
               value={inputValue}
               onChange={(e) => handleInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="flex-1 p-3 bg-white border-2 border-gray-300 rounded-xl text-lg font-bold text-gray-800 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+              className="flex-1 p-4 bg-white border-2 border-gray-300 rounded-xl text-xl font-bold text-gray-800 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
               placeholder="Nombre..."
               maxLength={15}
             />
             <button
               onClick={() => addParticipant(inputValue)}
               disabled={!inputValue.trim()}
-              className="px-5 py-3 bg-emerald-600 text-white rounded-xl font-bold text-lg shadow active:scale-95 disabled:opacity-40"
+              className="px-6 py-4 bg-emerald-600 text-white rounded-xl font-black text-2xl shadow active:scale-95 disabled:opacity-40"
             >
               +
             </button>
@@ -147,12 +146,12 @@ function StepParticipants({ participants, setParticipants, onNext }) {
 
           {/* Suggestions dropdown */}
           {suggestions.length > 0 && (
-            <div className="absolute z-10 left-0 right-16 mt-1 bg-white border-2 border-emerald-300 rounded-xl shadow-lg overflow-hidden">
+            <div className="absolute z-10 left-0 right-20 mt-1 bg-white border-2 border-emerald-300 rounded-xl shadow-lg overflow-hidden">
               {suggestions.map((name) => (
                 <button
                   key={name}
                   onClick={() => addParticipant(name)}
-                  className="w-full px-4 py-3 text-left font-bold text-emerald-800 hover:bg-emerald-50 active:bg-emerald-100 border-b border-gray-100 last:border-0"
+                  className="w-full px-4 py-3 text-left font-bold text-lg text-emerald-800 hover:bg-emerald-50 active:bg-emerald-100 border-b border-gray-100 last:border-0"
                 >
                   {name}
                 </button>
@@ -170,17 +169,17 @@ function StepParticipants({ participants, setParticipants, onNext }) {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                className="flex items-center justify-between bg-white p-3 rounded-xl shadow border border-gray-200"
+                className="flex items-center justify-between bg-white p-4 rounded-xl shadow border border-gray-200"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 bg-emerald-100 rounded-full flex items-center justify-center font-black text-emerald-700 text-lg">
+                  <div className="w-11 h-11 bg-emerald-100 rounded-full flex items-center justify-center font-black text-emerald-700 text-xl">
                     {name[0].toUpperCase()}
                   </div>
-                  <span className="font-bold text-gray-800 text-lg">{name}</span>
+                  <span className="font-bold text-gray-800 text-xl">{name}</span>
                 </div>
                 <button
                   onClick={() => removeParticipant(name)}
-                  className="w-8 h-8 bg-red-100 text-red-600 rounded-full font-bold flex items-center justify-center active:bg-red-200"
+                  className="w-10 h-10 bg-red-100 text-red-600 rounded-full font-bold text-lg flex items-center justify-center active:bg-red-200"
                 >
                   ✕
                 </button>
@@ -191,8 +190,8 @@ function StepParticipants({ participants, setParticipants, onNext }) {
 
         {participants.length === 0 && (
           <div className="text-center text-gray-400 py-6">
-            <div className="text-3xl mb-2">🫂</div>
-            <p>Agregá al menos 2 personas</p>
+            <div className="text-4xl mb-2">🫂</div>
+            <p className="text-lg">Agregá al menos 2 personas</p>
           </div>
         )}
       </div>
@@ -207,7 +206,7 @@ function StepExpenses({ participants, expenses, setExpenses, onNext, onBack }) {
   const [category, setCategory] = useState('')
   const [customCategory, setCustomCategory] = useState('')
   const [amount, setAmount] = useState('')
-  const [splitType, setSplitType] = useState('all') // 'all' or 'custom'
+  const [splitType, setSplitType] = useState('all')
   const [splitBetween, setSplitBetween] = useState([])
 
   const resetForm = () => {
@@ -252,10 +251,10 @@ function StepExpenses({ participants, expenses, setExpenses, onNext, onBack }) {
     <div className="flex-1 overflow-y-auto p-4">
       <div className="w-full max-w-sm mx-auto space-y-4">
         <div className="text-center">
-          <div className="text-4xl mb-2">🧾</div>
-          <h2 className="text-xl font-black text-gray-800">Gastos</h2>
+          <div className="text-5xl mb-2">🧾</div>
+          <h2 className="text-2xl font-black text-gray-800">Gastos</h2>
           {total > 0 && (
-            <p className="text-emerald-600 font-bold text-lg">Total: ${total.toLocaleString()}</p>
+            <p className="text-emerald-600 font-black text-2xl mt-1">Total: ${total.toLocaleString()}</p>
           )}
         </div>
 
@@ -268,22 +267,22 @@ function StepExpenses({ participants, expenses, setExpenses, onNext, onBack }) {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="bg-white p-3 rounded-xl shadow border border-gray-200"
+                className="bg-white p-4 rounded-xl shadow border border-gray-200"
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="font-bold text-gray-800">{exp.category}</div>
-                    <div className="text-sm text-gray-500">
+                    <div className="font-bold text-gray-800 text-lg">{exp.category}</div>
+                    <div className="text-base text-gray-500">
                       Pagó <span className="font-bold text-emerald-700">{exp.paidBy}</span>
                       {' · '}
                       {exp.splitBetween.length === participants.length ? 'Entre todos' : `Entre ${exp.splitBetween.length}`}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="font-black text-lg text-gray-800">${exp.amount.toLocaleString()}</span>
+                    <span className="font-black text-xl text-gray-800">${exp.amount.toLocaleString()}</span>
                     <button
                       onClick={() => removeExpense(exp.id)}
-                      className="w-7 h-7 bg-red-100 text-red-600 rounded-full text-sm font-bold flex items-center justify-center"
+                      className="w-8 h-8 bg-red-100 text-red-600 rounded-full font-bold flex items-center justify-center"
                     >
                       ✕
                     </button>
@@ -301,17 +300,17 @@ function StepExpenses({ participants, expenses, setExpenses, onNext, onBack }) {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
-              className="bg-white p-4 rounded-2xl shadow-lg border-2 border-emerald-300 space-y-3"
+              className="bg-white p-4 rounded-2xl shadow-lg border-2 border-emerald-300 space-y-4"
             >
               {/* Who paid */}
               <div>
-                <label className="text-xs text-gray-500 font-bold uppercase block mb-1">¿Quién pagó?</label>
-                <div className="flex flex-wrap gap-1.5">
+                <label className="text-sm text-gray-500 font-bold uppercase block mb-2">¿Quién pagó?</label>
+                <div className="flex flex-wrap gap-2">
                   {participants.map((p) => (
                     <button
                       key={p}
                       onClick={() => setPaidBy(p)}
-                      className={`px-3 py-2 rounded-lg font-bold text-sm transition-all ${
+                      className={`px-4 py-3 rounded-xl font-bold text-base transition-all ${
                         paidBy === p
                           ? 'bg-emerald-600 text-white shadow'
                           : 'bg-gray-100 text-gray-600 active:bg-gray-200'
@@ -325,13 +324,13 @@ function StepExpenses({ participants, expenses, setExpenses, onNext, onBack }) {
 
               {/* Category */}
               <div>
-                <label className="text-xs text-gray-500 font-bold uppercase block mb-1">¿Qué se compró?</label>
-                <div className="flex flex-wrap gap-1.5">
+                <label className="text-sm text-gray-500 font-bold uppercase block mb-2">¿Qué se compró?</label>
+                <div className="flex flex-wrap gap-2">
                   {CATEGORIES.map((cat) => (
                     <button
                       key={cat.id}
                       onClick={() => setCategory(cat.id)}
-                      className={`px-3 py-2 rounded-lg font-bold text-sm transition-all ${
+                      className={`px-3 py-2.5 rounded-xl font-bold text-base transition-all ${
                         category === cat.id
                           ? 'bg-amber-500 text-white shadow'
                           : 'bg-gray-100 text-gray-600 active:bg-gray-200'
@@ -346,7 +345,7 @@ function StepExpenses({ participants, expenses, setExpenses, onNext, onBack }) {
                     type="text"
                     value={customCategory}
                     onChange={(e) => setCustomCategory(e.target.value)}
-                    className="w-full mt-2 p-2 border-2 border-gray-300 rounded-lg text-sm font-bold focus:border-amber-500 focus:outline-none"
+                    className="w-full mt-2 p-3 border-2 border-gray-300 rounded-xl text-base font-bold focus:border-amber-500 focus:outline-none"
                     placeholder="¿Qué fue?"
                     maxLength={20}
                   />
@@ -355,12 +354,12 @@ function StepExpenses({ participants, expenses, setExpenses, onNext, onBack }) {
 
               {/* Amount */}
               <div>
-                <label className="text-xs text-gray-500 font-bold uppercase block mb-1">Monto $</label>
+                <label className="text-sm text-gray-500 font-bold uppercase block mb-2">Monto $</label>
                 <input
                   type="number"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="w-full p-3 border-2 border-gray-300 rounded-xl text-center font-black text-2xl text-gray-800 focus:border-emerald-500 focus:outline-none"
+                  className="w-full p-4 border-2 border-gray-300 rounded-xl text-center font-black text-3xl text-gray-800 focus:border-emerald-500 focus:outline-none"
                   placeholder="0"
                   inputMode="numeric"
                 />
@@ -368,11 +367,11 @@ function StepExpenses({ participants, expenses, setExpenses, onNext, onBack }) {
 
               {/* Split */}
               <div>
-                <label className="text-xs text-gray-500 font-bold uppercase block mb-1">¿Entre quiénes?</label>
+                <label className="text-sm text-gray-500 font-bold uppercase block mb-2">¿Entre quiénes?</label>
                 <div className="flex gap-2 mb-2">
                   <button
                     onClick={() => setSplitType('all')}
-                    className={`flex-1 py-2 rounded-lg font-bold text-sm ${
+                    className={`flex-1 py-3 rounded-xl font-bold text-base ${
                       splitType === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'
                     }`}
                   >
@@ -380,7 +379,7 @@ function StepExpenses({ participants, expenses, setExpenses, onNext, onBack }) {
                   </button>
                   <button
                     onClick={() => setSplitType('custom')}
-                    className={`flex-1 py-2 rounded-lg font-bold text-sm ${
+                    className={`flex-1 py-3 rounded-xl font-bold text-base ${
                       splitType === 'custom' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'
                     }`}
                   >
@@ -388,12 +387,12 @@ function StepExpenses({ participants, expenses, setExpenses, onNext, onBack }) {
                   </button>
                 </div>
                 {splitType === 'custom' && (
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-2">
                     {participants.map((p) => (
                       <button
                         key={p}
                         onClick={() => toggleSplitPerson(p)}
-                        className={`px-3 py-2 rounded-lg font-bold text-sm transition-all ${
+                        className={`px-4 py-3 rounded-xl font-bold text-base transition-all ${
                           splitBetween.includes(p)
                             ? 'bg-blue-500 text-white shadow'
                             : 'bg-gray-100 text-gray-500'
@@ -410,14 +409,14 @@ function StepExpenses({ participants, expenses, setExpenses, onNext, onBack }) {
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={resetForm}
-                  className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold active:scale-95"
+                  className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-lg active:scale-95"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={addExpense}
                   disabled={!paidBy || !category || !amount || (splitType === 'custom' && splitBetween.length === 0)}
-                  className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold shadow active:scale-95 disabled:opacity-40"
+                  className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold text-lg shadow active:scale-95 disabled:opacity-40"
                 >
                   Agregar
                 </button>
@@ -426,7 +425,7 @@ function StepExpenses({ participants, expenses, setExpenses, onNext, onBack }) {
           ) : (
             <button
               onClick={() => setShowForm(true)}
-              className="w-full py-4 bg-emerald-600 text-white rounded-xl font-bold text-lg shadow-lg active:scale-95 flex items-center justify-center gap-2"
+              className="w-full py-4 bg-emerald-600 text-white rounded-xl font-bold text-xl shadow-lg active:scale-95 flex items-center justify-center gap-2"
             >
               ➕ Agregar Gasto
             </button>
@@ -435,8 +434,8 @@ function StepExpenses({ participants, expenses, setExpenses, onNext, onBack }) {
 
         {expenses.length === 0 && !showForm && (
           <div className="text-center text-gray-400 py-4">
-            <div className="text-3xl mb-2">💸</div>
-            <p>Cargá los gastos de la juntada</p>
+            <div className="text-4xl mb-2">💸</div>
+            <p className="text-lg">Cargá los gastos de la juntada</p>
           </div>
         )}
       </div>
@@ -461,28 +460,41 @@ function StepSummary({ participants, expenses, aliases, setAliases, onBack }) {
   })
 
   const shareWhatsApp = () => {
-    let text = '💰 *YoAnoto - División de Gastos*\n\n'
+    let text = '━━━━━━━━━━━━━━━━━━━━\n'
+    text += '💰 *YoAnoto - DIVISIÓN DE GASTOS* 💰\n'
+    text += '━━━━━━━━━━━━━━━━━━━━\n\n'
 
-    text += '📋 *Gastos:*\n'
+    text += '📋 *DETALLE DE GASTOS:*\n\n'
     expenses.forEach(exp => {
-      text += `• ${exp.category}: $${exp.amount.toLocaleString()} (pagó ${exp.paidBy})\n`
+      text += `  ${exp.category}\n`
+      text += `  💲 *$${exp.amount.toLocaleString()}* — Pagó *${exp.paidBy.toUpperCase()}*\n\n`
     })
 
-    text += `\n💵 *Total: $${total.toLocaleString()}*\n`
-    text += `👥 *Participantes: ${participants.length}*\n\n`
+    text += '━━━━━━━━━━━━━━━━━━━━\n'
+    text += `💵 *TOTAL: $${total.toLocaleString()}*\n`
+    text += `👥 ${participants.length} personas\n`
+    text += '━━━━━━━━━━━━━━━━━━━━\n\n'
 
-    text += '🔄 *Quién le paga a quién:*\n'
+    text += '🔄 *QUIÉN LE PAGA A QUIÉN:*\n\n'
     if (debts.length === 0) {
-      text += '✅ ¡Están todos al día!\n'
+      text += '  ✅ ¡Están todos al día!\n'
     } else {
       debts.forEach(d => {
-        const alias = aliases[d.to] ? `\n   📲 Alias: ${aliases[d.to]}` : ''
-        text += `• ${d.from} ➡️ ${d.to}: *$${d.amount.toLocaleString()}*${alias}\n`
+        text += `  💸 *${d.from.toUpperCase()}*\n`
+        text += `      ➡️  le paga a  ➡️\n`
+        text += `  🏦 *${d.to.toUpperCase()}*\n`
+        text += `      💲 *$${d.amount.toLocaleString()}*\n`
+        if (aliases[d.to]) {
+          text += `      📲 Alias: *${aliases[d.to]}*\n`
+        }
+        text += '\n'
       })
     }
 
-    text += '\n_Hecho con YoAnoto_ 🃏\n'
-    text += '👉 https://yoanoto.vercel.app'
+    text += '━━━━━━━━━━━━━━━━━━━━\n'
+    text += '_Hecho con YoAnoto_ 🃏\n'
+    text += '👉 https://yoanoto.vercel.app\n'
+    text += '━━━━━━━━━━━━━━━━━━━━'
 
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
   }
@@ -491,24 +503,24 @@ function StepSummary({ participants, expenses, aliases, setAliases, onBack }) {
     <div className="flex-1 overflow-y-auto p-4">
       <div className="w-full max-w-sm mx-auto space-y-4">
         <div className="text-center">
-          <div className="text-4xl mb-2">📊</div>
-          <h2 className="text-xl font-black text-gray-800">Resumen</h2>
-          <p className="text-emerald-600 font-bold text-lg">Total: ${total.toLocaleString()}</p>
+          <div className="text-5xl mb-2">📊</div>
+          <h2 className="text-2xl font-black text-gray-800">Resumen</h2>
+          <p className="text-emerald-600 font-black text-2xl mt-1">Total: ${total.toLocaleString()}</p>
         </div>
 
         {/* Per-person breakdown */}
         <div className="bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
-          <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
-            <span className="text-xs font-bold text-gray-500 uppercase">Resumen por persona</span>
+          <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+            <span className="text-sm font-bold text-gray-500 uppercase">Resumen por persona</span>
           </div>
           {participants.map(p => (
-            <div key={p} className="px-3 py-2 border-b border-gray-100 last:border-0 flex justify-between items-center">
-              <span className="font-bold text-gray-800">{p}</span>
+            <div key={p} className="px-4 py-3 border-b border-gray-100 last:border-0 flex justify-between items-center">
+              <span className="font-black text-gray-800 text-lg">{p}</span>
               <div className="text-right">
-                <div className="text-xs text-gray-500">
+                <div className="text-sm text-gray-500">
                   Pagó ${Math.round(perPerson[p].paid).toLocaleString()} · Le toca ${Math.round(perPerson[p].owes).toLocaleString()}
                 </div>
-                <div className={`font-bold text-sm ${
+                <div className={`font-black text-base ${
                   perPerson[p].paid - perPerson[p].owes > 0.5 ? 'text-emerald-600' :
                   perPerson[p].paid - perPerson[p].owes < -0.5 ? 'text-red-600' : 'text-gray-500'
                 }`}>
@@ -526,23 +538,23 @@ function StepSummary({ participants, expenses, aliases, setAliases, onBack }) {
 
         {/* Transactions */}
         <div className="bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
-          <div className="px-3 py-2 bg-emerald-50 border-b border-emerald-200">
-            <span className="text-xs font-bold text-emerald-700 uppercase">🔄 Transferencias</span>
+          <div className="px-4 py-3 bg-emerald-50 border-b border-emerald-200">
+            <span className="text-sm font-bold text-emerald-700 uppercase">🔄 Transferencias</span>
           </div>
           {debts.length === 0 ? (
-            <div className="p-4 text-center text-gray-500">
+            <div className="p-4 text-center text-gray-500 text-lg">
               ✅ ¡Nadie debe nada!
             </div>
           ) : (
             debts.map((d, i) => (
-              <div key={i} className="px-3 py-3 border-b border-gray-100 last:border-0">
+              <div key={i} className="px-4 py-4 border-b border-gray-100 last:border-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-red-600">{d.from}</span>
-                    <span className="text-gray-400">➡️</span>
-                    <span className="font-bold text-emerald-600">{d.to}</span>
+                    <span className="font-black text-red-600 text-lg">{d.from}</span>
+                    <span className="text-gray-400 text-xl">➡️</span>
+                    <span className="font-black text-emerald-600 text-lg">{d.to}</span>
                   </div>
-                  <span className="font-black text-lg">${d.amount.toLocaleString()}</span>
+                  <span className="font-black text-2xl">${d.amount.toLocaleString()}</span>
                 </div>
               </div>
             ))
@@ -551,26 +563,25 @@ function StepSummary({ participants, expenses, aliases, setAliases, onBack }) {
 
         {/* Aliases for payment */}
         <div className="bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
-          <div className="px-3 py-2 bg-blue-50 border-b border-blue-200">
-            <span className="text-xs font-bold text-blue-700 uppercase">📲 Alias de pago (opcional)</span>
+          <div className="px-4 py-3 bg-blue-50 border-b border-blue-200">
+            <span className="text-sm font-bold text-blue-700 uppercase">📲 Alias de pago (opcional)</span>
           </div>
-          <div className="p-3 space-y-2">
-            {/* Only show alias for creditors (people who are owed money) */}
+          <div className="p-4 space-y-3">
             {[...new Set(debts.map(d => d.to))].map(name => (
-              <div key={name} className="flex items-center gap-2">
-                <span className="font-bold text-sm text-gray-700 w-20 truncate">{name}:</span>
+              <div key={name} className="flex items-center gap-3">
+                <span className="font-bold text-base text-gray-700 w-24 truncate">{name}:</span>
                 <input
                   type="text"
                   value={aliases[name] || ''}
                   onChange={(e) => setAliases({ ...aliases, [name]: e.target.value })}
-                  className="flex-1 p-2 border-2 border-gray-200 rounded-lg text-sm font-bold focus:border-blue-400 focus:outline-none"
+                  className="flex-1 p-3 border-2 border-gray-200 rounded-xl text-base font-bold focus:border-blue-400 focus:outline-none"
                   placeholder="alias.mp o CBU"
                   maxLength={30}
                 />
               </div>
             ))}
             {debts.length === 0 && (
-              <p className="text-center text-sm text-gray-400">No hay transferencias pendientes</p>
+              <p className="text-center text-base text-gray-400">No hay transferencias pendientes</p>
             )}
           </div>
         </div>
@@ -578,7 +589,7 @@ function StepSummary({ participants, expenses, aliases, setAliases, onBack }) {
         {/* WhatsApp share button */}
         <button
           onClick={shareWhatsApp}
-          className="w-full py-4 bg-green-500 text-white rounded-xl font-bold text-lg shadow-lg active:scale-95 flex items-center justify-center gap-2"
+          className="w-full py-5 bg-green-500 text-white rounded-xl font-bold text-xl shadow-lg active:scale-95 flex items-center justify-center gap-2"
         >
           📱 Compartir por WhatsApp
         </button>
@@ -594,7 +605,6 @@ export default function ExpenseSplitter({ onBack }) {
   const [expenses, setExpenses] = useState([])
   const [aliases, setAliases] = useState({})
 
-  // Save names to cache when moving to step 2
   const goToStep2 = () => {
     saveCachedNames(participants)
     setStep(2)
@@ -603,9 +613,7 @@ export default function ExpenseSplitter({ onBack }) {
   const stepLabels = ['Personas', 'Gastos', 'Resumen']
 
   return (
-    <div
-      className="h-screen flex flex-col bg-gray-100 overflow-hidden"
-    >
+    <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
       {/* Header */}
       <div
         className="bg-emerald-800 text-white px-3 py-2"
@@ -614,11 +622,11 @@ export default function ExpenseSplitter({ onBack }) {
         <div className="flex items-center justify-between mb-2">
           <button
             onClick={step === 1 ? onBack : () => setStep(step - 1)}
-            className="p-2 active:bg-emerald-700 rounded-lg font-bold"
+            className="p-2 active:bg-emerald-700 rounded-lg font-bold text-lg"
           >
             ← {step === 1 ? 'Menú' : 'Atrás'}
           </button>
-          <span className="font-bold text-lg">💰 Gastos</span>
+          <span className="font-bold text-xl">💰 Gastos</span>
           <div className="w-16" />
         </div>
 
@@ -626,10 +634,10 @@ export default function ExpenseSplitter({ onBack }) {
         <div className="flex gap-1">
           {[1, 2, 3].map(s => (
             <div key={s} className="flex-1 flex flex-col items-center">
-              <div className={`w-full h-1.5 rounded-full ${
+              <div className={`w-full h-2 rounded-full ${
                 s <= step ? 'bg-yellow-400' : 'bg-emerald-600'
               }`} />
-              <span className={`text-xs mt-1 ${s === step ? 'text-yellow-300 font-bold' : 'text-emerald-400'}`}>
+              <span className={`text-sm mt-1 ${s === step ? 'text-yellow-300 font-bold' : 'text-emerald-400'}`}>
                 {stepLabels[s - 1]}
               </span>
             </div>
@@ -681,7 +689,7 @@ export default function ExpenseSplitter({ onBack }) {
           <button
             onClick={goToStep2}
             disabled={participants.length < 2}
-            className="w-full py-4 bg-emerald-600 text-white rounded-xl font-black text-lg shadow-lg active:scale-95 disabled:opacity-40"
+            className="w-full py-4 bg-emerald-600 text-white rounded-xl font-black text-xl shadow-lg active:scale-95 disabled:opacity-40"
           >
             Siguiente →
           </button>
@@ -690,7 +698,7 @@ export default function ExpenseSplitter({ onBack }) {
           <button
             onClick={() => setStep(3)}
             disabled={expenses.length === 0}
-            className="w-full py-4 bg-emerald-600 text-white rounded-xl font-black text-lg shadow-lg active:scale-95 disabled:opacity-40"
+            className="w-full py-4 bg-emerald-600 text-white rounded-xl font-black text-xl shadow-lg active:scale-95 disabled:opacity-40"
           >
             Ver Resumen →
           </button>
@@ -698,7 +706,7 @@ export default function ExpenseSplitter({ onBack }) {
         {step === 3 && (
           <button
             onClick={onBack}
-            className="w-full py-4 bg-gray-200 text-gray-700 rounded-xl font-bold text-lg active:scale-95"
+            className="w-full py-4 bg-gray-200 text-gray-700 rounded-xl font-bold text-xl active:scale-95"
           >
             🏠 Volver al Menú
           </button>
